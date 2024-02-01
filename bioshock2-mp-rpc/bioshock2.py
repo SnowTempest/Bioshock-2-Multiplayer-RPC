@@ -393,7 +393,6 @@ def in_game_map():
 
 @wait_for_load_and_retry()
 def pre_game():
-
     shock_mp_game_replication_info_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["ShockMPGameReplicationInfo Class"]))
 
     if shock_mp_game_replication_info_address != 0:
@@ -420,7 +419,6 @@ def in_game():
 
 @wait_for_load_and_retry()
 def end_game():
-
     shock_mp_game_replication_info_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["ShockMPGameReplicationInfo Class"]))
 
     if shock_mp_game_replication_info_address != 0:

@@ -17,6 +17,7 @@ def main():
     print("\nWaiting for Multiplayer To Be Open")
 
     rpc_loop()
+    
 # Function: rpc_init()
 # Initializes the Discord Rich Presence Client Connection.
 def rpc_init():
@@ -39,7 +40,7 @@ def rpc_id():
             line = file.readline()
             app_id = line.split('=')[1].strip().strip('"') if 'APP_ID' in line else None
     except FileNotFoundError:
-        close("Discord.txt Not Found. Please Create the File and Put Your Discord App ID Inside.")
+        close("app.txt Not Found. Please Create the File and Put Your Discord App ID Inside.")
     
     if app_id is None:
         close("Invalid Discord ID Found. Did You Follow the Format Correctly?")

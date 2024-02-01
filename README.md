@@ -1,37 +1,54 @@
-# Bioshock 2 Multiplayer RPC
+# Bioshock 2 Multiplayer Discord Rich Presence
 
-Bioshock 2 Multiplayer RPC is a python-based application which showcases what the user is doing on Bioshock 2 Multiplayer onto the users Discord profile.
+## Overview
 
-# Setup 
-1 - Download the Program under the Releases section of the Github. <br>
-2 - Put the Downloaded Program into a New Folder. <br>
-3 - Create a Text File named app. Should look like app.txt. <br>
-4 - Login into the Discord Developer Portal: https://discord.com/developers/applications <br>
-5 - Create a new Application and Name it Bioshock 2 Multiplayer. <br>
-6 - Copy the Application ID value located under the General Information Tab. <br>
-7 - Put the value into the app.txt file. <br>
-8 - The value should look like so: APP_ID="INSERT_APP_ID_HERE". <br>
-9 - Save the file and now Open up the program to start the Rich Presence Client. <br>
+Bioshock 2 Multiplayer Discord Rich Presence (RPC) is a Python-based application that seamlessly integrates Bioshock 2 Multiplayer gameplay information into the user's Discord profile through the Discord Rich Presence feature.
 
-# Libraries
-## Functools
-Link - https://docs.python.org/3/library/functools.html
-Used with Wrappers to prevent memory crashes and enforce loading before checking values.
-## Pathlib
-Link - https://docs.python.org/3/library/pathlib.html
-Used for better file directory control.
-## Psutil
-Link - https://pypi.org/project/psutil/
-Used for accessing process information.
-## Pymem
-Link - https://pypi.org/project/Pymem/
-Used for accessing Bioshock 2's memory for retrieving current game status information.
-## PyPresence
-Link - https://github.com/qwertyquerty/pypresence
-Used for the Discord Rich Presence Client Connection
+## Setup
 
+1. **Download:** Obtain the program from the "Releases" section on the [GitHub repository](https://github.com/SnowTempest/Bioshock-2-Multiplayer-RPC).
+2. **Folder Placement:** Place the downloaded program into a new folder or any folder that you'll remember.
+3. **Configuration File:** Create a text file named `app.txt`.
+4. **Discord Developer Portal:** Log in to the [Discord Developer Portal](https://discord.com/developers/applications).
+5. **Create Application:** Generate a new application named "Bioshock 2 Multiplayer."
+6. **Application ID:** Copy the Application ID from the "General Information" tab in the Discord Developer Portal.
+7. **Configuration File Update:** Paste the copied Application ID into the `app.txt` file in the format `APP_ID="INSERT_APP_ID_HERE"`.
+8. **Save:** Save the `app.txt` file.
+9. **Launch:** Open the program to initiate the Rich Presence client.
 
-# Usage
-1 - Open the Program and RPC will start as long as the Discord Application ID is correct and if the game is open. <br>
-2 - It will run until Bioshock 2 is closed. <br>
-3 - You can close the program at any time by clicking on it and pressing CTRL + C. <br>
+## Libraries
+
+### 1. Functools
+
+- [Documentation](https://docs.python.org/3/library/functools.html)
+- Utilized with wrappers to mitigate memory crashes and enforce loading before checking values.
+
+### 2. Pathlib
+
+- [Documentation](https://docs.python.org/3/library/pathlib.html)
+- Facilitates improved control over file directories.
+
+### 3. Psutil
+
+- [Documentation](https://pypi.org/project/psutil/)
+- Enables access to process information for enhanced functionality.
+
+### 4. Pymem
+
+- [Documentation](https://pypi.org/project/Pymem/)
+- Facilitates access to Bioshock 2's memory, retrieving current game status information.
+
+### 5. PyPresence
+
+- [GitHub Repository](https://github.com/qwertyquerty/pypresence)
+- Facilitates the connection to the Discord Rich Presence client.
+
+## Usage
+
+1. **Initialization:** Open the program to initiate the Rich Presence client, ensuring the correct Discord Application ID is configured and Bioshock 2 is running.
+2. **Runtime:** The program will run continuously until Bioshock 2 is closed.
+3. **Termination:** Close the program at any time by clicking on it and pressing `CTRL + C`.
+
+## License
+
+This project is licensed under the [GNU PUBLIC LICENSE](LICENSE).
