@@ -1,0 +1,227 @@
+
+GameMode IDs:
+    0x00 = Survival of the Fittest
+    0x01 = Civil War / Last Splicer Standing (Check Hardcore Civil War 1 -> 0, LSS 3 -> 2)
+    0x03 = Capture The Sister
+    0x04 = Team Adam Grab
+    0x05 = Turf War
+    0x06 = Kill Em Kindly
+    0x08 = Adam Grab
+
+Map IDs:
+    0x00 = Arcadia
+    0x01 = Farmer's Market
+    0x02 = Fort Frolic
+    0x03 = Hephaestus
+    0x04 = Home For The Poor
+    0x05 = Kashmir Restaurant
+    0x06 = Medical Pavilion
+    0x07 = Mercury Suites
+    0x08 = Neptune's Bounty
+    0x09 = Point Prometheus
+    0x10 = Fontaine Fisheries
+    0x11 = Pauper's Drop
+    0x12 = Smuggler's Hideout
+    0x13 = Fighting McDonagh's
+    0x14 = Dionysus Park
+    0x15 = Siren Alley
+
+Weapon IDs:
+    0x00 = Pistol
+    0x01 = Shotgun
+    0x02 = Crossbow
+    0x03 = Grenade Launcher
+    0x04 = Machine Gun
+    0x05 = Nail Gun
+    0x06 = HuntingRifle
+
+Weapon Upgrade IDs:
+    0x00 = Ammo Capacity
+    0x01 = Automatic Firing
+    0x02 = Damage Increase
+
+    0x04 = Automatic Reload
+    0x05 = Rate of Fire
+    0x06 = Sawed-Off Barrel
+
+    0x08 = Magazine Size
+    0x09 = Kickback Reduction
+    0x10 = Firing Boost
+
+    0x12 = Rate of Fire
+    0x13 = Damage Increase
+    0x14 = Piercing Bolt
+
+    0x16 = Velocity Boost
+    0x17 = Rate of Fire
+    0x18 = Homing Grenades
+
+    0x20 = Slug Capacity
+    0x21 = Sniper Scope
+    0x22 = Damage Increase
+
+    0x24 = Damage Increase
+    0x25 = Magazine Size
+    0x26 = Burst Firing
+    
+Plasmid IDs:
+    0x00 = Electro Bolt     
+    0x01 = Telekinesis      
+    0x02 = Aero Dash        
+    0x03 = Insect Swarm
+    0x04 = Geyser Trap      
+    0x05 = Houdini          
+    0x06 = Poison Quills
+    0x07 = Incinerate       
+    0x08 = Winter Blast
+
+Character IDs:
+    0x00 = Mlle Blanche de Glace
+    0x01 = Naledi Atkins
+    0x02 = Jacob Norris
+    0x03 = Barbara Johnson
+    0x04 = Buck Raleigh
+    0x05 = Zigo d'Acosta
+    0x06 = Danny Wilkins
+    0x07 = Oscar Calraca
+    0x08 = Suresh Sheti
+    0x09 = Louie McGraff
+
+Melee IDs:
+    Blanche:
+        0x00 = Knife
+        0x18 = Wrench
+        0x19 = Candle Stick
+        0x20 = Pipe
+        0x21 = Machete
+        0x22 = Rolling Pin
+        0x22 = Mallet
+        0x24 = Barbed Wire
+        0x25 = Crowbar
+        0x26 = Flashlight
+        0x27 = Axe
+    Naledi:
+        0x01 = Pipe Wrench
+        0x18-0x27 = Normal Melee
+    Jacob:
+        0x01 = Torch
+        0x20-0x29 = Normal Melee
+    Barbara:
+        0x00 = Frying Pan
+        0x17-0x26 = Normal Melee
+    Buck:
+        0x00 = Golf Club
+        0x18-0x27 = Normal Melee
+    Zigo:
+        0x01 = Fisherman Club
+        0x19-0x28 = Normal Melee
+    Danny:
+        0x00 = Football Trophy
+        0x18-0x27 = Normal Melee
+    Oscar:
+        0x00 = Cricket Blast
+        0x18-0x27 = Normal Melee
+    Suresh:
+        0x01 = Cane
+        0x19-0x28 = Normal Melee
+    Louie:
+        0x00 = Shank
+        0x18-0x27 = Normal Melee
+        
+Mask IDs:
+    Blanche:
+        0xFFFFFFFF = None
+        0x02 = Rabbit
+        0x03 = Goat
+        0x04 = Pink Feather
+        0x05 = Eagle
+        0x06 = Tragic Comedy
+        0x07 = Moon
+        0x08 = Indigo Feather
+        0x09 = Peacock Feather
+        0x10 = Sun God
+        0x11 = Octopus
+        0x12 = Demon
+        0x13 = Fish
+        0x14 = Crab
+        0x15 = Starfish
+        0x16 = Seahorse
+        0x17 = Bucket
+        0x28 = Gold Rabbit
+        0x29 = Gold Bucket
+    Naledi:
+        0x00 = Pilot Helmet
+    Jacob:
+        0x00 = Goggles
+        0x04-0x19 = Normal Masks
+        0x30-0x31 = Gold Masks
+    Barbara:
+        0xFFFFFFFF = None
+        0x01-0x16  = Normal Masks
+        0x27-0x28  = Golden Masks
+    Buck:
+        0xFFFFFFFF = None
+        0x02-0x17  = Normal Masks
+        0x28-0x29  = Golden Masks
+    Zigo:
+        0x00 = Fisherman Hat
+        0x03-0x18 = Normal Masks
+        0x29-0x30 = Golden Masks
+    Danny:
+        0xFFFFFFFF = None
+        0x02-0x17 = Normal Masks
+        0x28-0x29 = Golden Masks
+    Oscar:
+        0xFFFFFFFF = None
+        0x02-0x17 = Normal Masks
+        0x28-0x29 = Golden Masks
+    Suresh:
+        0x00 = Turban
+        0x03-0x18 = Normal Masks
+        0x29-0x30 = Golden Masks
+    Louie:
+        0xFFFFFFFF = None
+        0x02-0x17 = Normal Masks
+        0x28-0x29 = Golden Masks
+    
+Screen IDs:
+    Lobby = MatchMakingPortal.swf
+    Loadout = ConfigureLoadout.swf
+    Customize Character = CustomizeCharacter.swf
+    Select Character = CharacterSelect.swf
+    Personal Statistics = ViewProfile.swf
+    Trials = Trials.swf
+    MainMenu = MainMenu.swf
+    Credits = Credits.swf
+    Options = Options.swf
+    Intro Video = AttractVideoContainer.swf
+    In-game = HUDMultiplayer.swf
+
+Lobby State:
+    0x00 = LOBBYQUICKMATCHSTATE_NONE,
+    0x01 = LOBBYQUICKMATCHSTATE_SEARCH,
+    0x02 = LOBBYQUICKMATCHSTATE_JOIN,
+    0x03 = LOBBYQUICKMATCHSTATE_CLIENT,
+    0x04 = LOBBYQUICKMATCHSTATE_HOST
+
+Winning Reason:
+    0x00 = WinningReason_Invalid,
+    0x01 = WinningReason_TimeLimit,
+    0x02 = WinningReason_ScoreLimit,
+    0x03 = WinningReason_LastManStanding,
+    0x04 = WinningReason_Defense,
+    0x05 = WinningReason_Save,
+    0x06 = WinningReason_Harvest,
+    0x07 = WinningReason_Forced
+
+
+
+REFACTOR CODE 
+
+simplify main code and try to offset most code into bioshock2.py 
+
+get better lobby check using game settings to avoid losing lobby info
+
+fix end of match losing information 
+
+finalize beta and release to raven for testing

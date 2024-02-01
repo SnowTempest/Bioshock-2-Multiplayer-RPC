@@ -1,0 +1,17 @@
+# Ignore the output folder of any compilations made.
+*/output/
+
+# Ignore any Cache Files Created by Python
+__pycache__
+
+# Remove the Environmental Variables
+.env
+
+#Hides the memory file from the user to avoid bad actors using the memory values for their benefits.
+bioshock2_memory.py
+
+# Hides the Discord Application ID
+app.txt
+
+# Hides the Log Text as it gets generated on the user's system anyway.
+log.txt
