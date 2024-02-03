@@ -6,7 +6,7 @@ Bioshock 2 Multiplayer Discord Rich Presence (RPC) is a Python-based application
 
 ## Setup
 
-1. **Download:** Obtain the program from the "Releases" section on the [GitHub repository](https://github.com/SnowTempest/Bioshock-2-Multiplayer-RPC).
+1. **Download:** Obtain the program from the "Releases" section on the [GitHub repository](https://github.com/SnowTempest/Bioshock-2-Multiplayer-RPC/releases).
 2. **Folder Placement:** Place the downloaded program into a new folder or any folder that you'll remember.
 3. **Configuration File:** Create a text file named `app.txt`.
 4. **Discord Developer Portal:** Log in to the [Discord Developer Portal](https://discord.com/developers/applications).
