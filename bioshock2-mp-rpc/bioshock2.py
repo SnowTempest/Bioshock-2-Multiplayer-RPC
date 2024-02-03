@@ -1,7 +1,7 @@
 from shared import *
 from bioshock2_memory import *
 
-# Function process_active()
+# Function: process_active()
 # This function checks if the Bioshock 2 process is Active.
 # Also checks if the Process is located in the Multiplayer Directory and not the Singleplayer Direcotry.
 def process_active():
@@ -13,6 +13,7 @@ def process_active():
     
     return directory is not None and "\\MP\\" in directory
 
+# Initializes the Pymem Library if the Process is Active.
 if process_active():
     MEM = Pymem(APPLICATION_ID)
     BASE_ADDRESS = module_from_name(MEM.process_handle, APPLICATION_ID).lpBaseOfDll
@@ -20,7 +21,8 @@ if process_active():
 else:
     close("\nBioshock 2 Multiplayer is not Open. Please open before continuing. Bioshock 2 Multiplayer RPC will safely close.")
 
-# Class Bioshock2
+# Class: Bioshock2Multiplayer
+# Stores game information within dictionaries.
 class Bioshock2Multiplayer:
     CHARACTERS = {
         0: "Mlle Blanche de Glace",
@@ -37,16 +39,16 @@ class Bioshock2Multiplayer:
 
     MELEE_WEAPONS = {
         "Default Melee": ["Wrench", "Candle Stick","Pipe","Machete","Rolling Pin","Mallet","Barbed Wire","Crowbar","Flashlight","Hatchet"],
-        "Blanche Unique": "Knife",
-        "Naledi Unique": "Pipe Wrench",
-        "Jacob Unique": "Torch",
-        "Barbara Unique": "Frying Pan",
-        "Buck Unique": "Golf Club",
-        "Zigo Unique": "Fisherman Club",
-        "Danny Unique": "Football Trophy",
-        "Oscar Unique": "Cricket Bat",
-        "Suresh Unique": "Cane",
-        "Louie Unique": "Shank"
+        "Mlle Blanche de Glace": [0, 18, 28, "Knife"],
+        "Naledi Atkins": [1, 18, 28, "Pipe Wrench"],
+        "Jacob Norris": [1, 20, 30, "Torch"],
+        "Barbara Johnson": [0, 17, 27, "Frying Pan"],
+        "Buck Raleigh": [0, 18, 28, "Golf Club"],
+        "Zigo d'Acosta": [1, 19, 29, "Fisherman Club"],
+        "Danny Wilkins": [0, 18, 28, "Football Trophy"],
+        "Oscar Calraca": [0, 18, 28, "Cricket Bat"],
+        "Suresh Sheti": [1, 19, 29, "Cane"],       
+        "Louie McGraff": [0, 18, 28, "Shank"]
     }
 
     MAPS = {
@@ -163,13 +165,18 @@ class Bioshock2Multiplayer:
         "Apartment Intro": "Prologue",
         "Apartment Outro": "Epilogue",
         "HUDMultiplayer.swf": "In-Game",
-        "PlasmidVideoContainer.swf": "Plasmid Video",
+        "PlasmidVideoContainer.swf": "Showcase Video",
+        "AdjustBrightness.swf": "Adjust Brightness",
+        "Controls.swf": "Controls",
+        "RankedRewards.swf": "Rank Up",
         "End Game": "Match Ended",
         "Scoreboard": "Scoreboard",
         "Match Results": "Match Results",
         "Loading": "Loading"
     }
 
+# Class: Bioshock2MultiplayerRichPresence
+# Stores rpc information such as image urls and game states.
 class Bioshock2MultiplayerRichPresence:
     MAP_IMAGES ={
         "Arcadia":              "https://i.imgur.com/8k1fkKb.png",
@@ -217,7 +224,10 @@ class Bioshock2MultiplayerRichPresence:
         "Trials": {"Details": "Trials", "States": "Looking at their list of Trials"},
         "Intro Video": {"Details": "Promotional Video", "States": "Watching the Promotional Video"},
         "Credits": {"Details": "Credits", "States": "Watching the Credits"},
-        "Plasmid Video": {"Details": "Plasmid Promotional Video", "States": "Watching a Plasmid Video"},
+        "Showcase Video": {"Details": "Showcase Promotional Video", "States": "Watching a Video Showcase"},
+        "Adjust Brightness": {"Details": "Adjust Brightness", "States": "Adjusting their Brightness"},
+        "Controls": {"Details": "Controls", "States": "Changing Control Layout"},
+        "Rank Up": {"Details": "Rank Up", "States":"Viewing their Rank Up Rewards"},
         "Lobby": {"Details": "Lobby", "States": "Main Menu"},
         "Apartment": {"Details": "Apartment", "States": "Wandering in their Apartment"},
         "Prologue": {"Details": "Prologue", "States": "Watching the Apartment Prologue"},
@@ -230,6 +240,12 @@ class Bioshock2MultiplayerRichPresence:
         "Loading": {"Details": "Loading", "States": "Player is currently loading..."}
     }
 
+
+# Function: pointer_address(base, offsets)
+# ARG: base - The base address of the Bioshock 2 Multiplayer Process.
+# ARG: offset - The offsets of the given pointer which give the location of the address desired.
+# Traverses the pointer path starting at the base using the offets to determine the next memory lookup location.
+# Follows every offset location until it has reached the final offset value and retures the memory address at that location.
 def pointer_address(base, offsets):
     addr = MEM.read_int(base)
     for i, offset in enumerate(offsets):
@@ -238,16 +254,14 @@ def pointer_address(base, offsets):
     addr = addr + offsets[-1]
     return addr
 
-# Function wait_for_load_and_retry()
+# Function: wait_for_load_and_retry()
 # Wrapper function which checks if the game is currently loading and waits until the game is loaded.
 # The function also catches the MemoryReadError Exception and retries the function 3 times.
-# If no result is found after 3 retries the value forces the function to return None as its value,
+# If no result is found after 3 retries the function returns None as its value to prevent erroring.
 def wait_for_load_and_retry(max_retries=3, retry_delay=1):
     def decorator(func):
         @wraps(func)
-
         def wrapper(*args, **kwargs):
-
             try:
                 loading_flag_address = pointer_address(BASE_POINTER, OFFSETS["Loading Flag"])
 
@@ -273,13 +287,20 @@ def wait_for_load_and_retry(max_retries=3, retry_delay=1):
     return decorator
 
 
+# Function: sanitize_string(string)
+# ARG: string - The string to be sanitized.
+# Sanitizes the strings accessed within the games memory by removing spaces.
 def sanitize_string(string):
     return string.replace(b'\x00', b'').decode("ascii", errors="ignore")
 
+# Function: loading()
+# Returns True if the game is loaded. False when not loaded.
 @wait_for_load_and_retry()
 def loading():
     return MEM.read_bool(pointer_address(BASE_POINTER, OFFSETS["Loading Flag"]))
 
+# Function: screen_id()
+# Retrieves the current .swf file. Sanitizes the value and returns that as the screen id.
 @wait_for_load_and_retry()
 def screen_id():
     if in_apartment():
@@ -299,30 +320,44 @@ def screen_id():
     screen_id = movie_no_spaces.split('\\')[2]
     return Bioshock2Multiplayer.SCREENS[screen_id]
 
+# Function: in_lobby()
+# Checks if the player is currently in lobby if Engine.OnlineGameSettings is initialized with more than 0 players.
 @wait_for_load_and_retry()
 def in_lobby():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby GameSettings Class"])) > 0 and lobby_num_players() > 0
 
+# Function: lobby_num_players()
+# Returns number of players in the lobby.
 @wait_for_load_and_retry()
 def lobby_num_players():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby NumPlayers"]))
 
+# Function: public_connections()
+# Returns the number of public connections allowed to the lobby.
 @wait_for_load_and_retry()
 def public_connections():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Public Connections"]))
 
+# Function: private_connections()
+# Returns the number of private connections allowed to the lobby.
 @wait_for_load_and_retry()
 def private_connections():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Private Connections"]))
 
+# Function: in_public_lobby()
+# Determines if the player is currently in a public lobby.
 @wait_for_load_and_retry()
 def in_public_lobby():
     return in_lobby() and public_connections() > 0
 
+# Function: in_private_lobby()
+# Determines if the player is currently in a private lobby.
 @wait_for_load_and_retry()
 def in_private_lobby():
     return in_lobby() and private_connections() > 0
 
+# Function: lobby_map()
+# Returns the current lobby map. If MatchMakingPortal.swf has not initialized its lobby layout the function returns DLC as the given map.
 @wait_for_load_and_retry()
 def lobby_map():
     lobby_information_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array"]))
@@ -330,7 +365,7 @@ def lobby_map():
     lobby_information_max = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Max Size"]))
 
     if lobby_information_address == 0:
-        return "Lobby Not Initialized"
+        return Bioshock2Multiplayer.MAPS["DLC"]
     
     if lobby_information_max == 0x21 and lobby_information_count == 0x3:
         lobby_section = "A"
@@ -342,6 +377,9 @@ def lobby_map():
     lobby_map = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Map " + lobby_section]))
     return Bioshock2Multiplayer.MAPS[lobby_map]
     
+
+# Function: lobby_gamemode()
+# Returns the current lobby gamemode. If MatchMakingPortal.swf has not initialized its lobby layout the function returns Lobby Not Initialized as the current gamemode.
 @wait_for_load_and_retry()
 def lobby_gamemode():
     lobby_information_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array"]))
@@ -364,6 +402,8 @@ def lobby_gamemode():
     return Bioshock2Multiplayer.GAMEMODES[9] if lobby_gamemode == 1 and lobby_hardcore_flag else Bioshock2Multiplayer.GAMEMODES[lobby_gamemode]
 
 
+# Function: lobby_status()
+# Retrieves the current lobby status. If the lobby status string is greater that 30 characters it is truncated.
 @wait_for_load_and_retry()
 def lobby_status():
     lobby_status_size =  MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Status Message Size"]))
@@ -375,6 +415,9 @@ def lobby_status():
     else:
         return lobby_status
 
+
+# Function: in_game_gamemode()
+# Retrieves the in-game gammode.
 @wait_for_load_and_retry()
 def in_game_gamemode():
     game_mode = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["In-Game GameMode"]))
@@ -383,6 +426,8 @@ def in_game_gamemode():
 
     return Bioshock2Multiplayer.GAMEMODES[9] if game_mode == 1 and hardcore_flag else Bioshock2Multiplayer.GAMEMODES[game_mode]
 
+# Function: in_game_map()
+# Retrieves the in-game map.
 @wait_for_load_and_retry()
 def in_game_map():
     last_url_size = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Last URL Size"]))
@@ -391,6 +436,9 @@ def in_game_map():
 
     return Bioshock2Multiplayer.MAP_URLS[map]
 
+# Function: pre_game()
+# Determines if the player is currently waiting for the match to begin. This period is the 10 second countdown before the game officially starts.
+# Checks if ShockGame.ShockMPReplicationInfo is initialized before attempting to read match information.
 @wait_for_load_and_retry()
 def pre_game():
     shock_mp_game_replication_info_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["ShockMPGameReplicationInfo Class"]))
@@ -404,8 +452,9 @@ def pre_game():
     
     return False
 
-# Function in_game()
-# Checks if the Player is In-Game.
+# Function: in_game()
+# Determines if the player is in-game.
+# Checks if ShockGame.ShockMPReplicationInfo is initialized before attempting to read match information.
 @wait_for_load_and_retry()
 def in_game():
     shock_mp_game_replication_info_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["ShockMPGameReplicationInfo Class"]))
@@ -413,10 +462,13 @@ def in_game():
     if shock_mp_game_replication_info_address != 0:
         game_ready_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Game Ready Flag"]))
         game_ready_flag = (game_ready_address & (1 << 0)) == 0
-        return game_ready_flag and MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["In-Game Flag"])) == 1
+        return game_ready_flag and MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Game Running Flag"])) == 1
         
     return False
 
+# Function: end_game()
+# Determines if the player is at match end. Normally when the player is viewing the end-game scoreboard.
+# Checks if ShockGame.ShockMPReplicationInfo is initialized before attempting to read match information.
 @wait_for_load_and_retry()
 def end_game():
     shock_mp_game_replication_info_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["ShockMPGameReplicationInfo Class"]))
@@ -428,18 +480,24 @@ def end_game():
     
     return False
 
+# Function: display_scoreboard()
+# Checks if the player has viewed the end-game scoreboard.
 @wait_for_load_and_retry()
 def display_scoreboard():
     scoreboard_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Scoreboard Shown Flag"]))
     scoreboard_flag = (scoreboard_address & (1 << 0)) != 0
     return scoreboard_flag
 
+# Function: display_match_results()
+# Checks if the player has viewed the match results. This includes the gained ADAM from the match and player rank ups.
 @wait_for_load_and_retry()
 def display_match_results():
     match_result_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Match Results Flag"]))
     match_result_flag = (match_result_address & (1 << 0)) != 0
     return match_result_flag
 
+# Function: end_game_screen()
+# Returns the player's current end-game screen.
 @wait_for_load_and_retry()
 def end_game_screen():
     if display_match_results():
@@ -449,10 +507,14 @@ def end_game_screen():
     else:
         return Bioshock2Multiplayer.SCREENS["End Game"]
 
+# Function: current_character()
+# Returns the player's current character.
 @wait_for_load_and_retry()
 def current_character():
     return Bioshock2Multiplayer.CHARACTERS[MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Character"]))]
 
+# Function: current_weapon()
+# Returns the player's current weapon.
 @wait_for_load_and_retry()
 def current_weapon():
     weapon_name_size = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Weapon Name Size"]))
@@ -460,6 +522,8 @@ def current_weapon():
     weapon = sanitize_string(weapon)
     return weapon if weapon in Bioshock2Multiplayer.WEAPONS else "No Weapon"
 
+# Function: current_upgrade()
+# Returns the player's current upgrade. Checks if the upgrade class is initialized and if so it continues on getting the correct upgrade. Otherwise returns No Upgrade as the upgrade.
 @wait_for_load_and_retry()
 def current_upgrade():
     upgrade_class_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Upgrade Class"]))
@@ -471,7 +535,9 @@ def current_upgrade():
         return upgrade if upgrade in Bioshock2Multiplayer.UPGRADES else "No Upgrade"
     else:
         return "No Upgrade"
-    
+
+# Function: current_plasmid()
+# Returns the player's current plasmid. 
 @wait_for_load_and_retry()
 def current_plasmid():
     plasmid_name_size = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Plasmid Name Size"]))
@@ -479,102 +545,83 @@ def current_plasmid():
     plasmid = sanitize_string(plasmid)
     return plasmid if plasmid in Bioshock2Multiplayer.PLASMIDS else "No Plasmid"
 
+
+# Function: current_melee()
+# Returns the player's current melee. Checks the current character and compares the melee_id with the unique melee ID for that character. 
+# If they match, returns the unique melee; otherwise, returns the default melee within the specified range.
 @wait_for_load_and_retry()
 def current_melee():
     character = current_character()
     melee_id = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Melee"]))
 
-    if character == "Mlle Blanche de Glace":
-        if melee_id == 0:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Blanche Unique"]
-        elif melee_id in range(18, 28):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 18]
-    elif character == "Naledi Atkins":
-        if melee_id == 1:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Naledi Unique"]
-        elif melee_id in range(18, 28):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 18]
-    elif character == "Jacob Norris":
-        if melee_id == 1:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Jacob Unique"]
-        elif melee_id in range(20, 30):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 20]
-    elif character == "Barbara Johnson":
-        if melee_id == 0:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Barbara Unique"]
-        elif melee_id in range(17, 27):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 17]
-    elif character == "Buck Raleigh":
-        if melee_id == 0:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Buck Unique"]
-        elif melee_id in range(18, 28):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 18]
-    elif character == "Zigo d'Acosta":
-        if melee_id == 1:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Zigo Unique"]
-        elif melee_id in range(19, 29):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 19]
-    elif character == "Danny Wilkins":
-        if melee_id == 0:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Danny Unique"]
-        elif melee_id in range(18, 28):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 18]
-    elif character == "Oscar Calraca":
-        if melee_id == 0:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Oscar Unique"]
-        elif melee_id in range(18, 28):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 18]
-    elif character == "Suresh Sheti":
-        if melee_id == 1:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Suresh Unique"]
-        elif melee_id in range(19, 29):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 19]
-    elif character == "Louie McGraff":
-        if melee_id == 0:
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Louie Unique"]
-        elif melee_id in range(18, 28):
-            return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - 18]
+    unique_id, min, max, unique = Bioshock2Multiplayer.MELEE_WEAPONS[character]
 
+    if melee_id == unique_id:
+        return unique
+    elif melee_id in range(min, max):
+        return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][melee_id - min]
+
+
+# Function: current_kills()
+# Returns the player's current kills.
 @wait_for_load_and_retry()
 def current_kills():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Kills"]))
 
+# Function: current_assists()
+# Returns the player's current assists.
 @wait_for_load_and_retry()
 def current_assists():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Assists"]))
 
+# Function: current_deaths()
+# Returns the player's current deaths.
 @wait_for_load_and_retry()
 def current_deaths():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Deaths"]))
 
+# Function: current_num_players()
+# Returns the current number of players within the match.
 @wait_for_load_and_retry()
 def current_num_players():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Game NumPlayers"]))
 
+# Function: current_timer()
+# Returns the remaining match time.
 @wait_for_load_and_retry()
 def current_timer():
     time = MEM.read_float(pointer_address(BASE_POINTER, OFFSETS["Main Timer"]))
     minutes, seconds = divmod(time, 60)
     return f"{int(minutes):2d}:{int(seconds):02d}"
 
+# Function: current_round()
+# Returns the current round. Used only when the gamemode is Capture the Sister and Last Splicer Standing.
 @wait_for_load_and_retry()
 def current_round():
     return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Current Round"]))
 
+# Function: player_dead()
+# Checks if the player is currently dead.
 @wait_for_load_and_retry()
 def player_dead():
     dead_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Death Flag"]))
     death_flag = (dead_address & (1 << 4)) != 0
     return death_flag
 
+# Function: player_melee()
+# Checks if the player is currently swinging their melee.
 @wait_for_load_and_retry()
 def player_melee():
     return MEM.read_bool(pointer_address(BASE_POINTER, OFFSETS["Melee Flag"]))
 
+# Function: player_bigdaddy()
+# Checks if the player is currently the Big Daddy by checking if the players's current weapon is the Rivet Gun and their current plasmid is either Proximity Mines or Stomp.
 @wait_for_load_and_retry()
 def player_bigdaddy():
     return current_weapon() == "Rivet Gun" and (current_plasmid() == "Proximity Mine" or current_plasmid() == "Stomp")
 
+# Function: apartment_screen()
+# Returns the current apartment screen.
 @wait_for_load_and_retry()
 def apartment_screen():
     if in_apartment_lobby():
@@ -587,41 +634,43 @@ def apartment_screen():
         return Bioshock2Multiplayer.SCREENS['Apartment']
 
 # Function in_apartment()
-# Due to lack of being able to find this function I will need to hack myself a version that works using Loadouts.
+# Checks if the player is in their apartment.
 @wait_for_load_and_retry()
 def in_apartment():
     return in_game_map() == "Apartment Lobby" and not in_game()
 
+# Function: in_apartment_lobby()
+# Checks if the player is using the bathysphere lobby.
 @wait_for_load_and_retry()
 def in_apartment_lobby():
     apartment_lobby_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Bathysphere Lobby Flag"]))
     apartment_lobby_flag = (apartment_lobby_address & (1 << 3)) != 0
-
     return apartment_lobby_flag
 
+# Function: in_apartment_intro()
+# Checks if the player is currently watching the apartment prologue.
 @wait_for_load_and_retry()
 def in_apartment_intro():
     video_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Apartment Videos Flag"]))
     intro_flag = (video_address & (1 << 0)) != 0
-
     return intro_flag
 
+# Function: in_apartment_outro()
+# Checks if the player is currently watching the apartment epilogue.
 @wait_for_load_and_retry()
 def in_apartment_outro():
     video_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Apartment Videos Flag"]))
     outro_flag = (video_address & (1 << 1)) != 0
-
     return outro_flag
 
-@wait_for_load_and_retry()
-def loadout_start_time():
-    return MEM.read_float(pointer_address(BASE_POINTER, OFFSETS["Loadout Start Time"]))
-
+# Function: loadout_selected()
+# Checks if the player selected their in-game loadout.
 @wait_for_load_and_retry()
 def loadout_selected():
-    return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Loadout Selected Flag"])) >= 0
+    return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Streamed In Loadout"])) >= 0
 
-
+# Function: rpc_current_status()
+# Returns the current RPC status depending on the current screen.
 def rpc_current_status():
     bio2_details, bio2_states = rpc_current_screen()
     bio2_buttons = [{"label": "Not Currently in a Lobby", "url": MPDISCORD_LINK}]
@@ -643,7 +692,8 @@ def rpc_current_status():
     
     return bio2_details, bio2_states, bio2_buttons, menu_image, menu_text
 
-
+# Function: rpc_current_screen()
+# Returns the current details and states of the game based on the current screen id of the game.
 def rpc_current_screen():
     screen = screen_id()
     if screen is not None:
@@ -652,21 +702,49 @@ def rpc_current_screen():
         details, states = "Loading...", "Player is Loading....."
     return details, states
 
+# Function: rpc_character_information()
+# Returns rpc character information.
 def rpc_character_information():
     return Bioshock2MultiplayerRichPresence.CHARACTER_IMAGES[current_character()], "Playing as : " + current_character()
 
+# Function: rpc_lobby_map()
+# Returns the url for the current lobby map. 
 def rpc_lobby_map():
     map = lobby_map()
-
-    if map == "Lobby Not Initialized":
-        return Bioshock2MultiplayerRichPresence.MAP_IMAGES["DLC"], "Waiting to Join Lobby"
-
     return Bioshock2MultiplayerRichPresence.MAP_IMAGES[map], map
 
+# Function: rpc_game_map()
+# Returns the url for the current in-game map.
 def rpc_game_map():
     map = in_game_map()
     return Bioshock2MultiplayerRichPresence.MAP_IMAGES[map], map
 
+# Function: rpc_game_state()
+# Returns the players current rpc state.
+def rpc_game_state():
+    if (pre_game() or in_game()) and not loadout_selected():
+        return "Selecting a Loadout"
+    elif pre_game() and loadout_selected():
+        return "Waiting for Match to Begin"
+    elif in_game() and loadout_selected():
+        if player_dead():
+            return "Waiting to Respawn"
+        elif player_melee() and not player_bigdaddy():
+            return "Melee Attacking with the " + current_melee()
+        elif player_melee() and player_bigdaddy():
+            return "Melee Attacking with the Rivet Gun"
+        elif player_bigdaddy():
+            return "Roaming as the Big Daddy" if current_plasmid() != "Stomp" else "Big Daddy Stomping the Competition"
+        else:
+            return current_upgrade() + " " + current_weapon() + " and " + current_plasmid() if current_upgrade() != "No Upgrade" else current_weapon() + " and " + current_plasmid()
+    elif end_game():
+        end_screen = end_game_screen()
+        return "Viewing Match Results" if end_screen == "Match Results" else ("Viewing the End-Match Scoreboard" if end_screen == "Scoreboard" else "Match has Ended")
+    else:
+        return None
+
+# Function: rpc_lobby_information()
+# Returns the players rpc lobby information.
 def rpc_lobby_information():
     if in_public_lobby():
         return lobby_gamemode(), lobby_map(), rpc_lobby_button()
@@ -675,46 +753,19 @@ def rpc_lobby_information():
     else:
         return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": MYDISCORD_LINK}]
 
+# Function: rpc_lobby_button()
+# Returns the rpc lobby buttons.
 def rpc_lobby_button():
     if in_public_lobby():
         return [{"label": "Public Lobby - "  + str(lobby_num_players()) + "/10", "url": MPDISCORD_LINK}, {"label": lobby_status(), "url": MYDISCORD_LINK}]
     elif in_private_lobby():
         return [{"label": "Private Lobby - "  + str(lobby_num_players()) + "/10", "url": MPDISCORD_LINK}, {"label": lobby_status(), "url": MYDISCORD_LINK}]
 
-
+# Function: rpc_game_information()
+# Returns the current rpc game information.
 def rpc_game_information():
     game_details = in_game_gamemode() + " on " + in_game_map()
-    game_state = None
-
-    if (pre_game() or in_game()) and not loadout_selected():
-        game_state = "Selecting a Loadout"
-    elif pre_game() and loadout_selected():
-        game_state = "Waiting for Match to Begin"
-    elif in_game() and loadout_selected():
-        if player_dead():
-            game_state = "Waiting to Respawn"
-        elif player_melee() and not player_bigdaddy():
-            game_state = "Meleeing with the " + current_melee()
-        elif player_melee() and player_bigdaddy():
-            game_state = "Meleeing with the Rivet Gun"
-        elif player_bigdaddy():
-            game_state = "Roaming as the Big Daddy"
-            if current_plasmid() == "Stomp":
-                game_state = "Big Daddy Stomping the Competition"
-        else:
-            if current_upgrade() != "No Upgrade":
-                game_state = current_upgrade() + " " + current_weapon() + " and " + current_plasmid()
-            else:
-                game_state = current_weapon() + " and " + current_plasmid()
-    elif end_game():
-        end_screen = end_game_screen()
-        if end_screen == "Match Results":
-            game_state = "Viewing Match Results"
-        elif end_screen == "Scoreboard":
-            game_state = "Viewing the End-Match Scoreboard"
-        else:
-            game_state = "Match has Ended"
-
+    game_state = rpc_game_state()
 
     game_button = [
         {

@@ -196,32 +196,3 @@ Screen IDs:
     Options = Options.swf
     Intro Video = AttractVideoContainer.swf
     In-game = HUDMultiplayer.swf
-
-Lobby State:
-    0x00 = LOBBYQUICKMATCHSTATE_NONE,
-    0x01 = LOBBYQUICKMATCHSTATE_SEARCH,
-    0x02 = LOBBYQUICKMATCHSTATE_JOIN,
-    0x03 = LOBBYQUICKMATCHSTATE_CLIENT,
-    0x04 = LOBBYQUICKMATCHSTATE_HOST
-
-Winning Reason:
-    0x00 = WinningReason_Invalid,
-    0x01 = WinningReason_TimeLimit,
-    0x02 = WinningReason_ScoreLimit,
-    0x03 = WinningReason_LastManStanding,
-    0x04 = WinningReason_Defense,
-    0x05 = WinningReason_Save,
-    0x06 = WinningReason_Harvest,
-    0x07 = WinningReason_Forced
-
-
-
-REFACTOR CODE 
-
-simplify main code and try to offset most code into bioshock2.py 
-
-get better lobby check using game settings to avoid losing lobby info
-
-fix end of match losing information 
-
-finalize beta and release to raven for testing

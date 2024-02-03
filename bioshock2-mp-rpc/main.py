@@ -31,6 +31,9 @@ def rpc_init():
     except DiscordError:
         close("Invalid APP_ID. Please Make Sure You Have the Right Value and Try Again.")
 
+
+# Function rpc_id()
+# Retrieves the users Discord Application ID from the files.
 def rpc_id():
     change_directory()
     file_path = Path("app.txt")
@@ -47,6 +50,8 @@ def rpc_id():
 
     return app_id
 
+# Function: rpc_loop()
+# The main rpc loop which will run forever until the user closes Bioshock 2 or close the program manually.
 def rpc_loop():
     RPC = rpc_init()
     print("\nRPC has been Activated...")
@@ -62,9 +67,10 @@ def rpc_loop():
 
             print("Details: ", bio2_details)
             print("State: ", bio2_states)
+            print("\n")
 
             RPC.update(buttons = bio2_buttons, state=bio2_states, details= bio2_details, large_text=large_text, large_image=large_image, small_image=char_image, small_text=char_name)
-            time.sleep(1.5)
+            time.sleep(2.0)
 
     except KeyboardInterrupt:
         close("\nBioshock 2 Multiplayer RPC Will Now Close.")
