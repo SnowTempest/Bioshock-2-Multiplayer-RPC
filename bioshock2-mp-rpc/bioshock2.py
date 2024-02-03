@@ -91,6 +91,7 @@ class Bioshock2Multiplayer:
         "DE_RedLightAlley": "Siren Alley",
         "DE_Testbox": "Testbox",
         "DE_ApartmentLobby" : "Apartment Lobby",
+        "DE_Apartmentlobby" : "Apartment Lobby",
         "Entry": "Main Menu"
     }
 
@@ -270,6 +271,7 @@ def wait_for_load_and_retry(max_retries=3, retry_delay=1):
                     time.sleep(2)
             except:
                 close("Bioshock 2 either closed or has crashed. If this isn't the case. Please let the Developer Know in the Discord.")
+                log_error("Loading Error", "Loading Error. Could Engine.Engine be modified?", func.__name__)
             
             retries = 0
 

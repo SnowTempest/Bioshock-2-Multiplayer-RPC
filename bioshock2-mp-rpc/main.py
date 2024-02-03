@@ -14,7 +14,6 @@ def main():
     print("*****************************************************************************")
 
     print("\nYou Can Close the Program at Any Time Using Ctrl + C.\n")
-    print("\nWaiting for Multiplayer To Be Open")
 
     rpc_loop()
     
@@ -22,6 +21,7 @@ def main():
 # Initializes the Discord Rich Presence Client Connection.
 def rpc_init():
     try:
+        print("\nStarting RPC Client.\n")
         CLIENT_ID = rpc_id()
         RPC = pypresence.Presence(CLIENT_ID, pipe = 0)
         RPC.connect()
@@ -37,7 +37,7 @@ def rpc_init():
 def rpc_id():
     change_directory()
     file_path = Path("app.txt")
-
+    print("\nRetrieving Application ID.\n")
     try:
         with file_path.open("r") as file:
             line = file.readline()

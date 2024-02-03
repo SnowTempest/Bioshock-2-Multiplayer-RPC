@@ -44,7 +44,7 @@ def log_error(error, error_message, function_name):
 
 def close(message):
     print(message)
-    time.sleep(2)
+    time.sleep(4)
     exit()
 
 # Public Discord Server Link
