@@ -316,6 +316,7 @@ def screen_id():
             movie = MEM.read_bytes(pointer_address(BASE_POINTER, OFFSETS["Background Bink Movie"]), bink_movie_size * 2)
         except pymem.exception.MemoryReadError:
             return Bioshock2Multiplayer.SCREENS["Loading"]
+        
     movie_no_spaces = sanitize_string(movie)
     screen_id = movie_no_spaces.split('\\')[2]
     return Bioshock2Multiplayer.SCREENS[screen_id]
@@ -324,7 +325,7 @@ def screen_id():
 # Checks if the player is currently in lobby if Engine.OnlineGameSettings is initialized with more than 0 players.
 @wait_for_load_and_retry()
 def in_lobby():
-    return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby GameSettings Class"])) > 0 and lobby_num_players() > 0
+    return MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["OnlineGameSettings Class"])) > 0 and lobby_num_players() > 0
 
 # Function: lobby_num_players()
 # Returns number of players in the lobby.
@@ -360,12 +361,17 @@ def in_private_lobby():
 # Returns the current lobby map. If MatchMakingPortal.swf has not initialized its lobby layout the function returns DLC as the given map.
 @wait_for_load_and_retry()
 def lobby_map():
+
+    if not in_lobby():
+        return Bioshock2Multiplayer.MAPS[17]
+
     lobby_information_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array"]))
-    lobby_information_count = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Count"]))
-    lobby_information_max = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Max Size"]))
 
     if lobby_information_address == 0:
         return Bioshock2Multiplayer.MAPS[17]
+
+    lobby_information_count = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Count"]))
+    lobby_information_max = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Max Size"]))
     
     if lobby_information_max == 0x21 and lobby_information_count == 0x3:
         lobby_section = "A"
@@ -382,12 +388,17 @@ def lobby_map():
 # Returns the current lobby gamemode. If MatchMakingPortal.swf has not initialized its lobby layout the function returns Lobby Not Initialized as the current gamemode.
 @wait_for_load_and_retry()
 def lobby_gamemode():
+
+    if not in_lobby():
+        return "Lobby Not Initialized"
+    
     lobby_information_address = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array"]))
-    lobby_information_count = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Count"]))
-    lobby_information_max = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Max Size"]))
 
     if lobby_information_address == 0:
         return "Lobby Not Initialized"
+
+    lobby_information_count = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Count"]))
+    lobby_information_max = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Max Size"]))
 
     if lobby_information_max == 0x21 and lobby_information_count == 0x3:
         lobby_section = "A"
@@ -689,8 +700,6 @@ def rpc_current_status():
     elif bio2_details == "In-Game":
         bio2_details, bio2_states, bio2_buttons = rpc_game_information()
         menu_image, menu_text = rpc_game_map()
-    elif bio2_details == "Loading...":
-        bio2_buttons = [{"label": "Awaiting Player Load......", "url": MPDISCORD_LINK}]
     
     return bio2_details, bio2_states, bio2_buttons, menu_image, menu_text
 
