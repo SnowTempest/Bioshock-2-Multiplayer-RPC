@@ -4,6 +4,7 @@
 */dist/
 *.spec
 *.bat
+bioshock2-mp-rpc-dev
 
 # Ignore any Cache Files Created by Python.
 __pycache__
