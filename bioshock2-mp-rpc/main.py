@@ -69,8 +69,16 @@ def rpc_loop():
             print("State: ", bio2_states)
             print("\n")
 
-            RPC.update(buttons = bio2_buttons, state=bio2_states, details= bio2_details, large_text=large_text, large_image=large_image, small_image=char_image, small_text=char_name)
-            time.sleep(2.0)
+            try:
+                RPC.update(buttons=bio2_buttons, state=bio2_states, details=bio2_details, large_text=large_text, large_image=large_image, small_image=char_image, small_text=char_name)
+                time.sleep(2.0)
+            except ServerError as e:
+                if 'label is not allowed to be empty' in str(e):
+                    default_button = "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": MYDISCORD_LINK}]
+                    RPC.update(buttons=[default_button])
+                else:
+                    pass
+
 
     except KeyboardInterrupt:
         close("\nBioshock 2 Multiplayer RPC Will Now Close.")

@@ -1,7 +1,7 @@
 #Related Imports
 import psutil
 import pypresence
-from pypresence.exceptions import DiscordNotFound, DiscordError, InvalidID
+from pypresence.exceptions import DiscordNotFound, DiscordError, InvalidID, ServerError
 import os, time, sys
 from pymem import *
 from pymem.process import *

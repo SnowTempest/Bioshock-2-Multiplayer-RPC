@@ -69,6 +69,7 @@ class Bioshock2Multiplayer:
         14: "Dionysus Park",
         15: "Siren Alley",
         16: "Test Box",
+        17: "DLC"
     }
 
     MAP_URLS = {
@@ -305,17 +306,16 @@ def loading():
 def screen_id():
     if in_apartment():
         return apartment_screen()
-    
-    if not loading():
-        return Bioshock2Multiplayer.SCREENS["Loading"]
 
     if pre_game() or in_game() or end_game():
         hud_movie_size = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["HUD Movie Size"]))
         movie = MEM.read_bytes(pointer_address(BASE_POINTER, OFFSETS["HUD Movie"]), hud_movie_size * 2)
     else:
-        bink_movie_size = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Background Bink Movie Size"]))
-        movie = MEM.read_bytes(pointer_address(BASE_POINTER, OFFSETS["Background Bink Movie"]), bink_movie_size * 2)
-
+        try:
+            bink_movie_size = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Background Bink Movie Size"]))
+            movie = MEM.read_bytes(pointer_address(BASE_POINTER, OFFSETS["Background Bink Movie"]), bink_movie_size * 2)
+        except pymem.exception.MemoryReadError:
+            return Bioshock2Multiplayer.SCREENS["Loading"]
     movie_no_spaces = sanitize_string(movie)
     screen_id = movie_no_spaces.split('\\')[2]
     return Bioshock2Multiplayer.SCREENS[screen_id]
@@ -365,7 +365,7 @@ def lobby_map():
     lobby_information_max = MEM.read_int(pointer_address(BASE_POINTER, OFFSETS["Lobby Information Address Array Max Size"]))
 
     if lobby_information_address == 0:
-        return Bioshock2Multiplayer.MAPS["DLC"]
+        return Bioshock2Multiplayer.MAPS[17]
     
     if lobby_information_max == 0x21 and lobby_information_count == 0x3:
         lobby_section = "A"
@@ -689,6 +689,8 @@ def rpc_current_status():
     elif bio2_details == "In-Game":
         bio2_details, bio2_states, bio2_buttons = rpc_game_information()
         menu_image, menu_text = rpc_game_map()
+    elif bio2_details == "Loading...":
+        bio2_buttons = [{"label": "Awaiting Player Load......", "url": MPDISCORD_LINK}]
     
     return bio2_details, bio2_states, bio2_buttons, menu_image, menu_text
 
@@ -760,7 +762,9 @@ def rpc_lobby_button():
         return [{"label": "Public Lobby - "  + str(lobby_num_players()) + "/10", "url": MPDISCORD_LINK}, {"label": lobby_status(), "url": MYDISCORD_LINK}]
     elif in_private_lobby():
         return [{"label": "Private Lobby - "  + str(lobby_num_players()) + "/10", "url": MPDISCORD_LINK}, {"label": lobby_status(), "url": MYDISCORD_LINK}]
-
+    else:
+        return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": MYDISCORD_LINK}]
+    
 # Function: rpc_game_information()
 # Returns the current rpc game information.
 def rpc_game_information():
