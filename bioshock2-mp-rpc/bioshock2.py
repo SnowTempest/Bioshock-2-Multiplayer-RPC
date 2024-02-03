@@ -242,7 +242,6 @@ class Bioshock2MultiplayerRichPresence:
         "Loading": {"Details": "Loading", "States": "Player is currently loading..."}
     }
 
-
 # Function: pointer_address(base, offsets)
 # ARG: base - The base address of the Bioshock 2 Multiplayer Process.
 # ARG: offset - The offsets of the given pointer which give the location of the address desired.

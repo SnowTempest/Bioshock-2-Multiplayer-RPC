@@ -79,7 +79,6 @@ def rpc_loop():
                 else:
                     pass
 
-
     except KeyboardInterrupt:
         close("\nBioshock 2 Multiplayer RPC Will Now Close.")
     except InvalidID:
