@@ -13,6 +13,7 @@ __pycache__
 
 #Hides the memory file.
 bioshock2_memory.py
+maingui.py
 
 # Hides the dev Discord Application ID.
 app.txt

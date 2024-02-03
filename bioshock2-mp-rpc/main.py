@@ -1,5 +1,5 @@
 __author__ = "SnowTempest"
-__copyright__ = "Copyright (C) 2022 SnowTempest"
+__copyright__ = "Copyright (C) 2024 SnowTempest"
 __license__ = "GNU GENERAL PUBLIC LICENSE"
 __version__= "1.0"
 
@@ -43,7 +43,7 @@ def rpc_id():
             line = file.readline()
             app_id = line.split('=')[1].strip().strip('"') if 'APP_ID' in line else None
     except FileNotFoundError:
-        close("app.txt Not Found. Please Create the File and Put Your Discord App ID Inside.")
+        close("File app.txt Not Found. Please Create the File and Put Your Discord App ID Inside.")
     
     if app_id is None:
         close("Invalid Discord ID Found. Did You Follow the Format Correctly?")
