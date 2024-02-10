@@ -75,6 +75,26 @@ Plasmid IDs:
     0x07 = Incinerate       
     0x08 = Winter Blast
 
+Tonic IDs:
+    0x00 = Death Trap
+    0x01 = Death on Film
+    0x02 = Expert Researcher
+    0x03 = Head Hunter
+    0x04 = Eve Saver
+    0x05 = Security Evasion
+    0x06 = Slugger
+    0x07 = Speedy Recovery
+    0x08 = Metabolic EVE
+    0x09 = Speedy Hacker
+    0x10 = Sabotage
+    0x11 = Repairman
+    0x12 = Fast Feet
+    0x13 = Big Game Hunter
+    0x14 = Deadly Machines
+    0x15 = Leg Up
+    0x16 = Resurrection
+    0x17 = Back Stabber
+
 Character IDs:
     0x00 = Mlle Blanche de Glace
     0x01 = Naledi Atkins
@@ -196,3 +216,6 @@ Screen IDs:
     Options = Options.swf
     Intro Video = AttractVideoContainer.swf
     In-game = HUDMultiplayer.swf
+
+
+    Game Driver -> OnlineLobbyController -> OnlineLobby -> OnlineGameSettings + OnlineGameSearch

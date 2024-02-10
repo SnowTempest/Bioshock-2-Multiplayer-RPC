@@ -7,11 +7,11 @@ Bioshock 2 Multiplayer Discord Rich Presence (RPC) is a Python-based application
 ## Setup
 
 1. **Download:** Obtain the program from the "Releases" section on the [GitHub repository](https://github.com/SnowTempest/Bioshock-2-Multiplayer-RPC/releases/tag/Beta).
- > **Note:** Your antivirus software may detect the program as a Trojan and delete it. This is a false positive triggered by the program's ability to read system memory, a behavior commonly associated with malware. Rest assured, the program is not malicious; it merely reads memory for legitimate purposes, such as retrieving game state information. If your antivirus flags it, please allow the program to run or exclude it from your Anti-Virus scans. If you have any concerns about the code within the application, feel free to take a look at the GitHub repository to examine the source code. You can also message me on here or Discord if you have any questions about its purpose.
+   > **Note:** Your antivirus software may detect the program as a Trojan and delete it. This is a false positive triggered by the program's ability to read system memory, a behavior commonly associated with malware. Rest assured, the program is not malicious; it merely reads memory for legitimate purposes, such as retrieving game state information. If your antivirus flags it, please allow the program to run or exclude it from your Anti-Virus scans. If you have any concerns about the code within the application, feel free to take a look at the GitHub repository to examine the source code. You can also message me on here or Discord if you have any questions about its purpose.
 2. **Folder Placement:** Place the downloaded program into a new folder or any folder that you'll remember.
 3. **Configuration File:** Create a text file named `app.txt`.
 4. **Discord Developer Portal:** Log in to the [Discord Developer Portal](https://discord.com/developers/applications).
-5. **Create Application:** Generate a new application named "Bioshock 2 Multiplayer."
+5. **Create Application:** Generate a new application named "Bioshock 2 Multiplayer." This will be the game name displayed on your profile.
 6. **Application ID:** Copy the Application ID from the "General Information" tab in the Discord Developer Portal.
 7. **Configuration File Update:** Paste the copied Application ID into the `app.txt` file in the format `APP_ID="INSERT_APP_ID_HERE"`.
 8. **Save:** Save the `app.txt` file.
