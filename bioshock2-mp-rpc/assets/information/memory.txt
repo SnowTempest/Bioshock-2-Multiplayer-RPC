@@ -219,3 +219,8 @@ Screen IDs:
 
 
     Game Driver -> OnlineLobbyController -> OnlineLobby -> OnlineGameSettings + OnlineGameSearch
+
+
+    GameMode ID = 0x1000000F On host , Off-Host = F SearchBar = F
+    Hardcore ID = 0x1000004E On Host , Offhost - host SearcBar = 4E
+    Map ID =      0x10000010 On Host, Off-host 10 SearchBar = 10
