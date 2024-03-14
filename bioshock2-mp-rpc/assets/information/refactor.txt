@@ -1,0 +1,32 @@
+Refactored Classes
+
+
+
+Completed
+
+Engine
+- - - - - - -
+Engine.OnlineSubsystem
+Engine.GameDriver
+Engine.OnlineLobbyController
+Engine.OnlineLobby
+Engine.OnlineGameSettings
+Engine.OnlineGameSearch
+Engine.AchievementManager
+Engine.DownloadableContentManager
+Engine.FlashLiason
+Engine.UserProfileManagerBase
+Engine.UserProfileManagerPC
+Engine.UserProfile
+Engine.LevelInfo
+
+
+ShockGame
+- - - - - - - 
+ShockGame.ShockGameDriver
+ShockGame.ShockUserSettings
+ShockGame.BarkManager
+ShockGame.UpgradeManager
+ShockGame.ShockResidentStreamingHelper
+ShockGame.ShockMPPlayerInfo
+
