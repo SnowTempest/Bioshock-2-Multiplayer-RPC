@@ -1,0 +1,9 @@
+/assets/information/
+__pycache__
+
+*.CT
+
+bioshock_2_multiplayer_memory.py
+bioshock_2_multiplayer_anticheat.py
+rpc_data.json
+error_log.json
