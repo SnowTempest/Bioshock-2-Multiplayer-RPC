@@ -613,7 +613,6 @@ class Upgrade(UnrealReader):
         return Upgrade.read("FriendlyNameID", num_bytes=Upgrade.friendly_name_size())
     
 
-@engine_load()
 def flash_movie():
     if in_apartment():
         return apartment_movie()
@@ -630,15 +629,14 @@ def flash_movie():
 
     return Bioshock2Multiplayer.FLASH_MOVIES[flash_movie]
 
-@engine_load()
+
 def in_lobby():
     return OnlineLobbyController.online_game_settings_load() == True and OnlineLobby.lobby_num_players() > 0
 
-@engine_load()
+
 def lobby_max_players():
     return ADAM_GRAB_MAX_PLAYERS if lobby_game_mode() == "GAMEMODE_ODDFFA" else MAX_PLAYERS
 
-@engine_load()
 def lobby_type():
     if not in_lobby():
         return "None"
@@ -650,7 +648,6 @@ def lobby_type():
     else:
         return "None"
 
-@engine_load()
 def lobby_game_map():
     if not in_lobby() or not OnlineGameSettings.ogs_props_load():
         return Bioshock2Multiplayer.MAPS[17]
@@ -666,7 +663,6 @@ def lobby_game_map():
     
     return Bioshock2Multiplayer.MAPS[lobby_map_id]
 
-@engine_load()
 def lobby_game_mode():
     if not in_lobby() or not OnlineGameSettings.ogs_props_load():
         return "No Gamemode Found"
@@ -685,7 +681,6 @@ def lobby_game_mode():
     
     return Bioshock2Multiplayer.GAME_MODES[9] if lobby_mode_id == 1 and mode_hardcore else Bioshock2Multiplayer.GAME_MODES[lobby_mode_id]
 
-@engine_load()
 def player_time_played():
     mTime = UserProfile.seconds_played()
     mHours = mTime // 3600
@@ -695,11 +690,9 @@ def player_time_played():
 
     return f"{mHours:02}:{mMinutes:02}:{mSeconds:02}"
 
-@engine_load()
 def player_splicer():
     return Bioshock2Multiplayer.CHARACTERS[ShockUserSettings.character_id()]
 
-@engine_load()
 def player_ranking():
     rankings = player_replication_array()
 
@@ -723,7 +716,6 @@ def player_ranking():
 
     return player_position
 
-@engine_load()
 def player_scoreboard_score():
     player_position = player_ranking()
 
@@ -740,7 +732,6 @@ def player_scoreboard_score():
 
     return scoreboard_rank_score
 
-@engine_load()
 def player_replication_array():
     if not ShockPlayerController.game_replication_info_load():
         return 3
@@ -755,7 +746,6 @@ def player_replication_array():
 
     return rankings
 
-@engine_load()
 def player_total_score():
     total_score = 0
     kill_score = PlayerReplicationInfo.player_kills() * ShockPlayerController.game_stat_kill_value()
@@ -779,7 +769,6 @@ def player_total_score():
 
     return total_score
 
-@engine_load()
 def player_weapon():
     if not ShockPlayerController.shock_player_load()  or DualWieldHands.current_weapon() == 0:
         return "None"
@@ -793,7 +782,6 @@ def player_weapon():
 
     return weapon if weapon in Bioshock2Multiplayer.WEAPONS else "No Weapon"
 
-@engine_load()
 def player_plasmid():
     if not ShockPlayerController.shock_player_load()  or DualWieldHands.current_ability() == 0:
         return "None"
@@ -802,7 +790,6 @@ def player_plasmid():
 
     return plasmid if plasmid in Bioshock2Multiplayer.PLASMIDS else "No Plasmid"
 
-@engine_load()
 def player_upgrade():
     if not ShockPlayerController.shock_player_load() or Weapon.active_upgrade() == 0:
         return "No Upgrade"
@@ -811,7 +798,6 @@ def player_upgrade():
 
     return upgrade if upgrade in Bioshock2Multiplayer.UPGRADES else "No Upgrade"
 
-@engine_load()
 def player_quick_melee():
     splicer = player_splicer()
 
@@ -824,22 +810,18 @@ def player_quick_melee():
     elif quick_weapon in range(min_range, max_range):
         return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][quick_weapon - min_range]
 
-@engine_load()
 def player_melee():
     if not ShockPlayerController.shock_player_load() or DualWieldHands.current_weapon() == 0:
         return False
     
     return PlayerWeapon.quick_melee()
 
-@engine_load()
 def player_dead():
     return not ShockPlayerController.game_replication_info_load() or PlayerReplicationInfo.player_is_dead()
 
-@engine_load()
 def player_bigdaddy():
     return player_weapon() == "Rivet Gun" and (player_plasmid() == "Proximity Mine" or player_plasmid() == "Stomp")
 
-@engine_load()
 def player_game_status():
     if (pre_game() or running_game()) and not streamed_loadout():
         return "Selecting a Loadout"
@@ -859,14 +841,11 @@ def player_game_status():
         else: 
             return player_upgrade() + " " + player_weapon() + " with " + player_plasmid() if player_upgrade() != "No Upgrade" else player_weapon() + " with " + player_plasmid()
     elif end_game():
-        match_ending_screen = end_movie()
-        return match_ending_screen
+        return end_movie()
 
-@engine_load()
 def team_game():
     return False if not not ShockPlayerController.game_replication_info_load() else PlayerReplicationInfo.team_info() != 0
 
-@engine_load()
 def game_mode():
     if not ShockPlayerController.game_replication_info_load():
         return Bioshock2Multiplayer.GAME_MODES["None"]
@@ -875,9 +854,8 @@ def game_mode():
     mode_hardcore = ShockMPGameReplicationInfo.hardcore_mode()
     return Bioshock2Multiplayer.GAME_MODES[9] if gamemode == 1 and mode_hardcore else Bioshock2Multiplayer.GAME_MODES[gamemode]        
 
-@engine_load()
 def game_mode_type():
-    game_mode_id = Bioshock2Multiplayer[game_mode()]
+    game_mode_id = game_mode()
  
     game_mode_types = {
         "GAMEMODE_FFA": "Non-Team",
@@ -893,26 +871,21 @@ def game_mode_type():
 
     return game_mode_types[game_mode_id]
 
-@engine_load()
 def game_map():
     return Bioshock2Multiplayer.MAP_URLS[GameEngine.last_url_map_name()]
 
-@engine_load()
 def game_num_players():
     if not ShockPlayerController.game_replication_info_load():
         return 0
     
     return GameReplicationInfo.pri_array_player_count()
 
-@engine_load()
 def game_max_players():
-    return 6 if game_mode() == "GAMEMODE_ODDFFA" else 10
+    return ADAM_GRAB_MAX_PLAYERS if game_mode() == "GAMEMODE_ODDFFA" else MAX_PLAYERS
 
-@engine_load()
 def game_round():
     return 0 if not ShockPlayerController.game_replication_info_load() else ShockMPGameReplicationInfo.current_round()
 
-@engine_load()
 def game_timer():
     if not ShockPlayerController.game_replication_info_load():
         return f"00:00"
@@ -921,32 +894,24 @@ def game_timer():
     main_minutes, main_seconds = divmod(main_timer, 60)
     return f"{int(main_minutes):2d}:{int(main_seconds):02d}"
 
-@engine_load()
 def game_round_timer():
     return 0 if not ShockPlayerController.game_replication_info_load() else int(ShockMPGameReplicationInfo.round_timer())
 
-
-@engine_load()
 def streamed_loadout():
     return ShockMPPlayerController.streamed_in_loadout() >= 0
 
-@engine_load()
 def pre_game():
     return game_round_timer() > 0 if ShockPlayerController.game_replication_info_load() else False
 
-@engine_load()
 def running_game():
     return False if not ShockPlayerController.game_replication_info_load() else not ShockMPGameReplicationInfo.game_ready() and ShockMPGameReplicationInfo.game_running()
 
-@engine_load()
 def end_game(): 
     return not ShockPlayerController.game_replication_info_load() or ShockPlayerController.game_has_ended()
 
-@engine_load()
 def end_game_reason():
     return Bioshock2Multiplayer.GAME_WINNING_REASON[ShockPlayerController.game_end_reason()]
 
-@engine_load()
 def end_movie():
     if ShockPlayerController.match_scoreboard() and not ShockPlayerController.match_results():
         return "Score: "  + str(PlayerReplicationInfo.player_score()) + " Kills: " + str(PlayerReplicationInfo.player_kills()) + " Streaks: " + str(PlayerReplicationInfo.player_kill_streaks())
@@ -958,7 +923,6 @@ def end_movie():
     else:
         return "Match has Ended"
 
-@engine_load()
 def apartment_movie():
     if OnlineLobbyController.using_bathysphere():
         return Bioshock2Multiplayer.FLASH_MOVIES["Apartment Lobby"]
@@ -969,7 +933,6 @@ def apartment_movie():
     else:
         return Bioshock2Multiplayer.FLASH_MOVIES["Apartment"]
 
-@engine_load()
 def in_apartment():
     return game_map() == "Apartment Lobby"
 
@@ -981,10 +944,8 @@ def debug():
         print("Apartment Intro:", ShockPlayerController.in_apartment_intro())
         print("Apartment Outro", ShockPlayerController.in_apartment_outro())
     print(player_splicer())
+    print(game_mode_type())
 
-
-# Finish Refactoring.
-# Determine if caching is needed.
 # Create PyInstaller .bat script for easy .exe creation.
 # Test .exe
 # Modify readme for Discord Application Instructions

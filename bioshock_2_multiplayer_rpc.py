@@ -1,6 +1,5 @@
 from bioshock_2_multiplayer import *
 from bioshock_2_multiplayer import PlayerReplicationInfo as PRI
-from bioshock_2_multiplayer import ShockPlayerController as SPC
 from bioshock_2_multiplayer import UserProfile as ACTIVE_PROFILE
 
 
@@ -11,28 +10,28 @@ DISCORD_LINK = "https://discord.gg/4ydTGHfFPQ"
 
 class Bioshock2MultiplayerRPC:
     MAP_IMAGES = {
-        "Arcadia":              MAP_IMAGE_LINK + "1-Arcadia.png",
-        "Farmer's Market":      MAP_IMAGE_LINK + "2-FarmersMarket.png",
-        "Fort Frolic":          MAP_IMAGE_LINK + "3-FortFrolic.png",
-        "Hephaestus":           MAP_IMAGE_LINK + "4-Hephaestus.png",
-        "Home For The Poor":    MAP_IMAGE_LINK + "5-HomeForThePoor.png",
-        "Kashmir Restaurant":   MAP_IMAGE_LINK + "6-KashmirRestaurant.png", 
-        "Medical Pavilion":     MAP_IMAGE_LINK + "7-MedicalPavilion.png",
-        "Mercury Suites":       MAP_IMAGE_LINK + "8-MercurySuites.png",
-        "Neptune's Bounty":     MAP_IMAGE_LINK + "9-NeptunesBounty.png",
-        "Point Prometheus":     MAP_IMAGE_LINK + "10-PointPrometheus.png",
-        "Fontaine Fisheries":   MAP_IMAGE_LINK + "11-FontaineFisheries.png",
-        "Pauper's Drop":        MAP_IMAGE_LINK + "12-PaupersDrop.png",
-        "Smuggler's Hideout":   MAP_IMAGE_LINK + "13-SmugglersHideout.png",
-        "Fighting McDonagh's":  MAP_IMAGE_LINK + "14-FightingMcDonaghs.png",
-        "Dionysus Park":        MAP_IMAGE_LINK + "15-DionysusPark.png",
-        "Siren Alley":          MAP_IMAGE_LINK + "16-SirenAlley.png",
-        "Testbox":              MAP_IMAGE_LINK + "17-Testbox.png",
-        "Apartment":            MAP_IMAGE_LINK + "18-ApartmentLobby.png",
-        "DLC":                  MAP_IMAGE_LINK + "19-DLC.png",
-        "Ranked Rewards":       MAP_IMAGE_LINK + "20-RankRewards.jpeg",
-        "Main Menu":            MAP_IMAGE_LINK + "21-Entry.png",
-        "None":                 MAP_IMAGE_LINK + "19-DLC.png"
+        "Arcadia": "1-Arcadia.png",
+        "Farmer's Market": "2-FarmersMarket.png",
+        "Fort Frolic": "3-FortFrolic.png",
+        "Hephaestus": "4-Hephaestus.png",
+        "Home For The Poor": "5-HomeForThePoor.png",
+        "Kashmir Restaurant": "6-KashmirRestaurant.png", 
+        "Medical Pavilion": "7-MedicalPavilion.png",
+        "Mercury Suites": "8-MercurySuites.png",
+        "Neptune's Bounty": "9-NeptunesBounty.png",
+        "Point Prometheus": "10-PointPrometheus.png",
+        "Fontaine Fisheries": "11-FontaineFisheries.png",
+        "Pauper's Drop": "12-PaupersDrop.png",
+        "Smuggler's Hideout": "13-SmugglersHideout.png",
+        "Fighting McDonagh's": "14-FightingMcDonaghs.png",
+        "Dionysus Park": "15-DionysusPark.png",
+        "Siren Alley": "16-SirenAlley.png",
+        "Testbox": "17-Testbox.png",
+        "Apartment": "18-ApartmentLobby.png",
+        "DLC": "19-DLC.png",
+        "Ranked Rewards": "20-RankRewards.jpeg",
+        "Main Menu": "21-Entry.png",
+        "None": "19-DLC.png"
     }
 
     SPLICER_IMAGES = {
@@ -192,22 +191,22 @@ class Bioshock2MultiplayerRPC:
 
 def rpc_status():
     bio2_details, bio2_states = rpc_flash_details()
-    bio2_image, bio2_text = Bioshock2MultiplayerRPC.MAP_IMAGES["DLC"], bio2_details
+    bio2_image, bio2_text = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["DLC"], bio2_details
     bio2_buttons = [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
     bio2_small_image, bio2_small_text = rpc_splicer()
 
     if bio2_details in ["Main Menu", "Credits", "Promotional Movie", "Intro Movies", "Controls", "Showcase Video", "Settings"]:
-        bio2_image = Bioshock2MultiplayerRPC.MAP_IMAGES["Main Menu"] 
+        bio2_image = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["Main Menu"] 
         bio2_text = bio2_details
     elif bio2_details in ["Apartment", "Prologue", "Epilogue"]:
-        bio2_image = Bioshock2MultiplayerRPC.MAP_IMAGES["Apartment"] 
+        bio2_image = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["Apartment"] 
         bio2_text = bio2_details
     elif bio2_details in ["Lobby", "Apartment Lobby"]:
         bio2_details, bio2_states, bio2_buttons = rpc_lobby_details()
         bio2_image, bio2_text = rpc_lobby_map()
     elif bio2_details in ["Rank Up"]:
         bio2_details, bio2_states, bio2_buttons = rpc_rank_details()
-        bio2_image, bio2_text = Bioshock2MultiplayerRPC.MAP_IMAGES["Ranked Rewards"], "Ranked Rewards"
+        bio2_image, bio2_text = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["Ranked Rewards"], "Ranked Rewards"
     elif in_lobby() and bio2_details not in ["Lobby",  "Apartment Lobby", "In-Game"]:
         bio2_buttons = rpc_lobby_buttons()
         bio2_image, bio2_text = rpc_lobby_map()
@@ -242,13 +241,22 @@ def rpc_lobby_details():
 
 def rpc_lobby_map():
     lobby_map = lobby_game_map()
-    return Bioshock2MultiplayerRPC.MAP_IMAGES[lobby_map], lobby_map
+    return MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES[lobby_map], lobby_map
 
 def rpc_lobby_buttons():
     lobby = lobby_type()
 
     if lobby != "None":
-        return [{"label": lobby + " Lobby - "  + str(OnlineLobby.lobby_num_players()) + "/" + str(lobby_max_players()), "url": DISCORD_LINK}, {"label": OnlineLobbyController.game_lobby_status(), "url": DISCORD_LINK}]
+        return [
+            {
+                "label": lobby + " Lobby - "  + str(OnlineLobby.lobby_num_players()) + "/" + str(lobby_max_players()), 
+                "url": DISCORD_LINK
+            }, 
+            {
+                "label": OnlineLobbyController.game_lobby_status(), 
+                "url": DISCORD_LINK
+            }
+        ]
     else:
         return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
 
@@ -271,7 +279,7 @@ def rpc_game_details():
 
 def rpc_game_map():
     map = game_map()
-    return Bioshock2MultiplayerRPC.MAP_IMAGES[map], map
+    return MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES[map], map
 
 def rpc_end_details():
     bio2_details = Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()] + " on " + game_map()
@@ -293,7 +301,16 @@ def rpc_end_details():
 def rpc_rank_details():
     bio2_details = "Rank Up"
     bio2_states = "Player has reached Rank " + str(ACTIVE_PROFILE.player_rank())
-    bio2_buttons =  [{"label": "Kills: " + str(ACTIVE_PROFILE.player_lifetime_kills()) + " Wins: " + str(ACTIVE_PROFILE.player_lifetime_wins()), "url": DISCORD_LINK}, {"label": "Adam: " + str(ACTIVE_PROFILE.player_banked_adam()) + " Time: " + player_time_played(), "url": DISCORD_LINK}]
+    bio2_buttons =  [
+        {
+            "label": "Kills: " + str(ACTIVE_PROFILE.player_lifetime_kills()) + " Wins: " + str(ACTIVE_PROFILE.player_lifetime_wins()), 
+            "url": DISCORD_LINK
+        }, 
+        {
+            "label": "Adam: " + str(ACTIVE_PROFILE.player_banked_adam()) + " Time: " + player_time_played(), 
+            "url": DISCORD_LINK
+        }
+    ]
 
     return bio2_details, bio2_states, bio2_buttons 
 

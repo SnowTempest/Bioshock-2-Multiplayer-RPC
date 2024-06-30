@@ -2,8 +2,6 @@ import sys
 import os
 import json
 import traceback
-import tkinter as tk
-from tkinter import messagebox
 from time import sleep
 from psutil import process_iter
 
@@ -60,14 +58,8 @@ def log_normal_error(error, error_message, addition_details):
     with open("error_log.json", "w") as error_log:
         error_log.write(log_to_json)
 
-    show_error_popup(error, error_message)
     program_close("Program will close in 4 seconds.")
 
-def show_error_popup(error, error_message):
-    error_root = tk.Tk()
-    error_root.withdraw()
-    messagebox.showerror(error, error_message + " Please view error_log.json for more details.")
-    error_root.destroy()
 
 def clear_log():
     change_directory()
@@ -77,4 +69,4 @@ def clear_log():
 def program_close(close_message):
     print(close_message)
     sleep(0.1)
-    exit()
+    sys.exit()

@@ -6,18 +6,8 @@ __version__= "1.0"
 import pypresence
 from pypresence import DiscordNotFound, DiscordError, InvalidID, PipeClosed
 from pymem.exception import ProcessNotFound
-from bioshock_2_multiplayer_utils import json, change_directory, log_normal_error, clear_log, program_close, bioshock_2_is_active
+from bioshock_2_multiplayer_utils import json, sleep, change_directory, log_normal_error, clear_log, program_close, bioshock_2_is_active
 from bioshock_2_multiplayer_rpc import rpc_status
-
-
-def main():
-    banner()
-    rpc_loop()
-
-def banner():
-    print("*****************************************************************************")
-    print(" \nBioshock 2 Multiplayer Discord RPC by SnowTempest (ADTempest on YT/Twitch)\n")
-    print("*****************************************************************************")
 
 def rpc_id():
     change_directory()
@@ -56,9 +46,8 @@ def rpc_loop():
                 program_close("Bioshock 2 Is No Longer Open. Bioshock 2 Multiplayer RPC Will Now Close")
             
             bio2_details, bio2_state, bio2_buttons, bio2_image, bio2_text, bio2_small_image, bio2_small_text = rpc_status()
-
             RPC.update(buttons=bio2_buttons, state=bio2_state, details=bio2_details, large_text=bio2_text, large_image=bio2_image, small_image=bio2_small_image, small_text=bio2_small_text)
-
+            sleep(1.0)
     except KeyboardInterrupt:
         program_close("\nBioshock 2 Multiplayer RPC Will Now Close.")
     except InvalidID:
@@ -67,6 +56,16 @@ def rpc_loop():
         log_normal_error("Pymem Error: ProcessNotFound","\nBioshock 2 Multiplayer is not open or crashed. Bioshock 2 Multiplayer RPC will now close.", "Bioshock 2 Multiplayer was not found in the User's list of processes thus it was no longer safe to continue Bioshock 2 Multiplayer RPC connection. \nThis error helps prevent any memory read errors that might occur.")
     except PipeClosed:
         log_normal_error("Pypresence Error: PipeClosed", "\nDiscord either closed or crashed causing the RPC connection to close. Bioshock 2 Multiplayer RPC will be closed.","This issue occurs when Discord itself crashes while the RPC is connected causing the Pipe Connection to be closed. \nSimply restart the Bioshock 2 Multiplayer RPC again after Discord has been re-opened." )
+
+
+def main():
+    banner()
+    rpc_loop()
+
+def banner():
+    print("*****************************************************************************")
+    print(" \nBioshock 2 Multiplayer Discord RPC by SnowTempest (ADTempest on YT/Twitch)\n")
+    print("*****************************************************************************")
 
 # Safe Function Calling.
 if __name__ == "__main__":
