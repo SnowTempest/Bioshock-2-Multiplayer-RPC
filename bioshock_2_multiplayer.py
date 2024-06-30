@@ -1,4 +1,4 @@
-from bioshock_2_multiplayer_memory import engine_load, read_memory, Engine_U, ShockGame_U
+from bioshock_2_multiplayer_memory import level_load, read_memory, Engine_U, ShockGame_U
 
 ADAM_GRAB_MAX_PLAYERS = 6
 MAX_PLAYERS = 10
@@ -179,7 +179,7 @@ class Bioshock2Multiplayer:
         "End Game": "Match Ended",
         "Scoreboard": "Scoreboard",
         "Match Results": "Match Results",
-        "Loading": "Loading the Match",
+        "Loading": "Loading",
         "None": "Loading...",
     }
 
@@ -187,7 +187,7 @@ class UnrealReader:
     u_file = None
 
     @classmethod
-    @engine_load()
+    @level_load()
     def read(u_class, *attributes, num_bytes=None):
         u_class_name = u_class.__name__
         return read_memory(u_class.u_file, (u_class_name,) + attributes, num_bytes)
@@ -624,7 +624,9 @@ def flash_movie():
         flash_movie = FlashGUIController.hud_movie_file_name()
     elif bink_movie != 0:
         flash_movie = FlashGUIController.bink_movie_file_name()
-    
+    else:
+        return Bioshock2Multiplayer.FLASH_MOVIES["Loading"]
+
     flash_movie = flash_movie.split('\\')[2]
 
     return Bioshock2Multiplayer.FLASH_MOVIES[flash_movie]
@@ -875,10 +877,7 @@ def game_map():
     return Bioshock2Multiplayer.MAP_URLS[GameEngine.last_url_map_name()]
 
 def game_num_players():
-    if not ShockPlayerController.game_replication_info_load():
-        return 0
-    
-    return GameReplicationInfo.pri_array_player_count()
+    return 0 if not ShockPlayerController.game_replication_info_load() else GameReplicationInfo.pri_array_player_count()
 
 def game_max_players():
     return ADAM_GRAB_MAX_PLAYERS if game_mode() == "GAMEMODE_ODDFFA" else MAX_PLAYERS

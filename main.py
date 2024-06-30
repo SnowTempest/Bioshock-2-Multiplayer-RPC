@@ -47,7 +47,7 @@ def rpc_loop():
             
             bio2_details, bio2_state, bio2_buttons, bio2_image, bio2_text, bio2_small_image, bio2_small_text = rpc_status()
             RPC.update(buttons=bio2_buttons, state=bio2_state, details=bio2_details, large_text=bio2_text, large_image=bio2_image, small_image=bio2_small_image, small_text=bio2_small_text)
-            sleep(1.0)
+            sleep(1.5)
     except KeyboardInterrupt:
         program_close("\nBioshock 2 Multiplayer RPC Will Now Close.")
     except InvalidID:

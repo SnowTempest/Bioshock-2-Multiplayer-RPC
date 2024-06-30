@@ -195,7 +195,7 @@ def rpc_status():
     bio2_buttons = [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
     bio2_small_image, bio2_small_text = rpc_splicer()
 
-    if bio2_details in ["Main Menu", "Credits", "Promotional Movie", "Intro Movies", "Controls", "Showcase Video", "Settings"]:
+    if bio2_details in ["Main Menu", "Credits", "Promotional Movie", "Intro Movies", "Controls", "Showcase Video", "Settings", "Adjust Brightness"]:
         bio2_image = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["Main Menu"] 
         bio2_text = bio2_details
     elif bio2_details in ["Apartment", "Prologue", "Epilogue"]:
