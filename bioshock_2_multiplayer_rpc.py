@@ -1,4 +1,8 @@
 from bioshock_2_multiplayer import *
+from bioshock_2_multiplayer import PlayerReplicationInfo as PRI
+from bioshock_2_multiplayer import ShockPlayerController as SPC
+from bioshock_2_multiplayer import UserProfile as ACTIVE_PROFILE
+
 
 MAP_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Maps/Icons/"
 SPLICER_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Characters/"
@@ -6,7 +10,7 @@ PLASMID_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-M
 DISCORD_LINK = "https://discord.gg/4ydTGHfFPQ"
 
 class Bioshock2MultiplayerRPC:
-    MAP_IMAGES ={
+    MAP_IMAGES = {
         "Arcadia":              MAP_IMAGE_LINK + "1-Arcadia.png",
         "Farmer's Market":      MAP_IMAGE_LINK + "2-FarmersMarket.png",
         "Fort Frolic":          MAP_IMAGE_LINK + "3-FortFrolic.png",
@@ -58,6 +62,29 @@ class Bioshock2MultiplayerRPC:
         "Stomp": "10-Stomp.png",
         "Sonic Boom": "11-SonicBoom.png",
         "None": "12-None.png"
+    }
+
+    GAME_MODES_FRIENDLY_NAMES = {
+        "GAMEMODE_FFA": "Survival of the Fittest",
+        "GAMEMODE_TDM": "Civil War",
+        "GAMEMODE_HOG": "Capture The Sister",
+        "GAMEMODE_ODD": "Team Adam Grab",
+        "GAMEMODE_TC": "Turf War",
+        "GAMEMODE_DLC_2": "Kill 'Em Kindly",
+        "GAMEMODE_ODDFFA": "Adam Grab",
+        "GAMEMODE_TDMHC": "Last Splicer Standing",
+        "GAMEMODE_NONE": "Loading"
+    }    
+    
+    WINNING_REASON = {
+        "WinningReason_Invalid": "Match ended with Invalid Win",
+        "WinningReason_TimeLimit": "Time Limit has been Reached",
+        "WinningReason_ScoreLimit": "Score Limit has been Reached",
+        "WinningReason_LastManStanding": "All Players Left the Match",
+        "WinningReason_Defense": "Defenders have Won the Match",
+        "WinningReason_Save": "Little Sister was Saved",
+        "WinningReason_Harvest": "Little Sister was Harvested",
+        "WinningReason_Forced": "Match has been Aborted by Host"
     }
 
     GAME_INFORMATION = {
@@ -186,11 +213,11 @@ def rpc_status():
         bio2_image, bio2_text = rpc_lobby_map()
     elif bio2_details == "In-Game" and end_game():
         bio2_details, bio2_states, bio2_buttons = rpc_end_details()
-        bio2_image, bio2_text = rpc_lobby_map()
+        bio2_image, bio2_text = rpc_game_map()
         bio2_small_image, bio2_small_text = rpc_plasmid()
     elif bio2_details == "In-Game":
         bio2_details, bio2_states, bio2_buttons = rpc_game_details()
-        bio2_image, bio2_text = rpc_lobby_map()
+        bio2_image, bio2_text = rpc_game_map()
         bio2_small_image, bio2_small_text = rpc_plasmid()
 
     return bio2_details, bio2_states, bio2_buttons, bio2_image, bio2_text, bio2_small_image, bio2_small_text
@@ -209,7 +236,7 @@ def rpc_flash_details():
 
 def rpc_lobby_details():
     if in_lobby():
-        return lobby_game_mode()[1], lobby_game_map(), rpc_lobby_buttons()
+        return Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[lobby_game_mode()], lobby_game_map(), rpc_lobby_buttons()
     else:
         return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
 
@@ -221,29 +248,33 @@ def rpc_lobby_buttons():
     lobby = lobby_type()
 
     if lobby != "None":
-        return [{"label": lobby + " Lobby - "  + str(lobby_num_players()) + "/" + str(lobby_max_players()), "url": DISCORD_LINK}, {"label": lobby_status(), "url": DISCORD_LINK}]
+        return [{"label": lobby + " Lobby - "  + str(OnlineLobby.lobby_num_players()) + "/" + str(lobby_max_players()), "url": DISCORD_LINK}, {"label": OnlineLobbyController.game_lobby_status(), "url": DISCORD_LINK}]
     else:
         return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
 
 def rpc_game_details():
-    bio2_details = game_mode()[1] + " on " + lobby_game_map()
+    bio2_details = Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()] + " on " + game_map()
     bio2_states = player_game_status()
 
     bio2_buttons = [
         {
-            "label": "Match: " + str(game_num_players()) + "/" + str(game_max_players()) + (" Round: " + str(game_round() + 1) + (" Time: " + str(game_timer())) if game_mode()[0] in ["HOG", "TDMHC"] else (" Time: " + str(game_timer()) if running_game() else "")),
+            "label": "Match: " + str(game_num_players()) + "/" + str(game_max_players()) + (" Round: " + str(game_round() + 1) + (" Time: " + str(game_timer())) if game_mode() in ["GAMEMODE_HOG", "GAMEMODE_TDMHC"] else (" Time: " + str(game_timer()) if running_game() else "")),
             "url": DISCORD_LINK
         },
         {
-            "label": "Score: " + str(player_score()) + " Kills: " + str(player_kills()) + " Deaths: " + str(player_deaths()),
+            "label": "Score: " + str(PRI.player_score()) + " Kills: " + str(PRI.player_kills()) + " Deaths: " + str(PRI.player_deaths()),
             "url": DISCORD_LINK
         }
     ]
 
     return bio2_details, bio2_states, bio2_buttons
 
+def rpc_game_map():
+    map = game_map()
+    return Bioshock2MultiplayerRPC.MAP_IMAGES[map], map
+
 def rpc_end_details():
-    bio2_details = game_mode()[1] + " on " + lobby_game_map()
+    bio2_details = Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()] + " on " + game_map()
     bio2_states = player_game_status()
 
     bio2_buttons = [
@@ -252,7 +283,7 @@ def rpc_end_details():
             "url": DISCORD_LINK,
         },
         {
-            "label": str(game_end_reason()),
+            "label": Bioshock2MultiplayerRPC.WINNING_REASON[end_game_reason()],
             "url": DISCORD_LINK
         }
     ]
@@ -261,8 +292,8 @@ def rpc_end_details():
 
 def rpc_rank_details():
     bio2_details = "Rank Up"
-    bio2_states = "Player has reached Rank " + str(player_rank())
-    bio2_buttons =  [{"label": "Kills: " + str(player_lifetime_kills()) + " Wins: " + str(player_lifetime_wins()), "url": DISCORD_LINK}, {"label": "Adam: " + str(player_banked_adam()) + " Time: " + player_time_played(), "url": DISCORD_LINK}]
+    bio2_states = "Player has reached Rank " + str(ACTIVE_PROFILE.player_rank())
+    bio2_buttons =  [{"label": "Kills: " + str(ACTIVE_PROFILE.player_lifetime_kills()) + " Wins: " + str(ACTIVE_PROFILE.player_lifetime_wins()), "url": DISCORD_LINK}, {"label": "Adam: " + str(ACTIVE_PROFILE.player_banked_adam()) + " Time: " + player_time_played(), "url": DISCORD_LINK}]
 
     return bio2_details, bio2_states, bio2_buttons 
 

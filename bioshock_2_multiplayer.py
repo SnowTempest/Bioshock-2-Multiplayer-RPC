@@ -1,5 +1,11 @@
 from bioshock_2_multiplayer_memory import engine_load, read_memory, Engine_U, ShockGame_U
 
+ADAM_GRAB_MAX_PLAYERS = 6
+MAX_PLAYERS = 10
+OGS_MAP_PROP_ID = 0x10000010
+OGS_MODE_PROP_ID = 0x1000000F
+OGS_HC_PROP_ID = 0x1000004E
+
 class Bioshock2Multiplayer:
     CHARACTERS = {
         0: "Mlle Blanche de Glace",
@@ -102,7 +108,7 @@ class Bioshock2Multiplayer:
         17: "DLC",
     }
 
-    MAP_URLS ={
+    MAP_URLS = {
         "DE_Arcadia": "Arcadia",
         "DE_Market": "Farmer's Market",
         "DE_FortFrolic": "Fort Frolic",
@@ -126,31 +132,30 @@ class Bioshock2Multiplayer:
         "Loading...": "None"
     }
 
-    GAMEMODES ={
-        0: ["FFA", "Survival of the Fittest"],
-        1: ["TDM", "Civil War"],
-        3: ["HOG", "Capture The Sister"],
-        4: ["ODD", "Team Adam Grab"],
-        5: ["TC", "Turf War"],
-        6: ["DLC2", "Kill 'Em Kindly"],
-        8: ["ODDFFA", "Adam Grab"],
-        9: ["TDMHC", "Last Splicer Standing"],
-        "None": ["NONE", "Loading..."],
+    GAME_MODES = {
+        0: "GAMEMODE_FFA",
+        1: "GAMEMODE_TDM",
+        3: "GAMEMODE_HOG",
+        4: "GAMEMODE_ODD",
+        5: "GAMEMODE_TC",
+        6: "GAMEMODE_DLC_2",
+        8: "GAMEMODE_ODDFFA",
+        9: "GAMEMODE_TDMHC",
+        "None": "GAMEMODE_NONE"
     }
 
-    WIN_REASONS = {
-        0: "Match ended with Invalid Win",
-        1: "Time Limit has been Reached",
-        2: "Score Limit has been Reached",
-        3: "All Players Left the Match",
-        4: "Defenders have Won the Match",
-        5: "Little Sister was Saved",
-        6: "Little Sister was Harvested",
-        7: "Match has been Aborted by Host"
-
+    GAME_WINNING_REASON = {
+        0:  "WinningReason_Invalid",
+        1:  "WinningReason_TimeLimit",
+        2:  "WinningReason_ScoreLimit",
+        3:  "WinningReason_LastManStanding",
+        4:  "WinningReason_Defense",
+        5:  "WinningReason_Save",
+        6:  "WinningReason_Harvest",
+        7:  "WinningReason_Forced",
     }
 
-    FLASH_MOVIES ={
+    FLASH_MOVIES = {
         "MatchMakingPortal.swf": "Lobby",
         "ConfigureLoadout.swf": "Loadout",
         "CustomizeCharacter.swf": "Customize Character",
@@ -178,42 +183,448 @@ class Bioshock2Multiplayer:
         "None": "Loading...",
     }
 
+class UnrealReader:
+    u_file = None
 
-class PlayerReplicationInfo:
-    def read_stat(self, attribute):
-        return read_memory(Engine_U, ["PlayerReplicationInfo", attribute])
-
-@engine_load()
-def game_replication_info_load():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GRI"]) != 0
-
-@engine_load()
-def shock_player_load():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "SMP"]) != 0
-
-@engine_load()
-def online_game_settings_load():
-    return read_memory(Engine_U, ["OnlineLobbyController", "mOnlineLobby"]) != 0 and read_memory(Engine_U, ["OnlineLobby", "mGameSettings"]) != 0
+    @classmethod
+    @engine_load()
+    def read(u_class, *attributes, num_bytes=None):
+        u_class_name = u_class.__name__
+        return read_memory(u_class.u_file, (u_class_name,) + attributes, num_bytes)
 
 
-@engine_load()
-def online_game_settings_properties_load():
-    return read_memory(Engine_U, ["OnlineGameSettings", "Engine.Settings", "Properties"]) != 0
+class GameEngine(UnrealReader):
+    u_file = Engine_U
+
+    @staticmethod
+    def last_url_map_name_size():
+        return GameEngine.read("LastURL", "DE_Map NameSize")
+
+    @staticmethod
+    def last_url_map_name():
+        return GameEngine.read("LastURL", "DE_Map Name", num_bytes=GameEngine.last_url_map_name_size())
+
+
+class OnlineLobbyController(UnrealReader):
+    u_file = Engine_U
+
+    @staticmethod
+    def online_game_settings_load():
+        return OnlineLobbyController.online_lobby() != 0 and OnlineLobby.game_settings() != 0
+
+    @staticmethod
+    def online_lobby():
+        return OnlineLobbyController.read("mOnlineLobby")
+    
+    @staticmethod
+    def game_lobby_status():
+        return OnlineLobbyController.read("mGUIGameLobbyStatus", num_bytes=OnlineLobbyController.game_lobby_status_size())
+
+    @staticmethod
+    def game_lobby_status_size():
+        return OnlineLobbyController.read("mGUIGameLobbyStatusSize")
+    
+    @staticmethod
+    def using_bathysphere():
+        return OnlineLobbyController.read("mGUIUsingBathysphere")
+
+
+class OnlineLobby(UnrealReader):
+    u_file = Engine_U
+
+    @staticmethod
+    def game_settings():
+        return OnlineLobby.read("mGameSettings")
+    
+    @staticmethod
+    def lobby_num_players():
+        return OnlineLobby.read("mGameNumPlayers")
+
+
+class OnlineGameSettings(UnrealReader):
+    u_file = Engine_U
+
+    @staticmethod
+    def ogs_props_load():
+        return OnlineGameSettings.read("Engine.Settings", "Properties") != 0
+
+    @staticmethod
+    def property_id(prop_index):
+        return OnlineGameSettings.read("Engine.Settings", "Properties", "Properties [" + str(prop_index) + "]")
+
+    @staticmethod
+    def property_value_1(prop_index):
+        return OnlineGameSettings.read("Engine.Settings", "Properties", "Properties [" + str(prop_index) + "]", "Data", "Value_1")
+    
+    @staticmethod
+    def num_public_connections():
+        return OnlineGameSettings.read("NumPublicConnections")
+    
+    @staticmethod
+    def num_private_connections():
+        return OnlineGameSettings.read("NumPrivateConnections")
+
+
+class FlashGUIController(UnrealReader):
+    u_file = Engine_U
+    
+    @staticmethod
+    def hud_movie():
+        return FlashGUIController.read("HUDMovie")
+    
+    @staticmethod
+    def bink_movie_container():
+        return FlashGUIController.read("BackgroundBinkMovieContainer")
+    
+    @staticmethod
+    def hud_file_name_size():
+        return FlashGUIController.read("HUDMovie", "Filename Size")
+    
+    @staticmethod
+    def hud_movie_file_name():
+        return FlashGUIController.read("HUDMovie", "FlashFilename", num_bytes=FlashGUIController.hud_file_name_size())
+
+    @staticmethod
+    def bink_movie_name_size():
+        return FlashGUIController.read("BackgroundBinkMovieContainer", "Filename Size")
+    
+    @staticmethod
+    def bink_movie_file_name():
+        return FlashGUIController.read("BackgroundBinkMovieContainer", "FlashFilename", num_bytes=FlashGUIController.bink_movie_name_size())
+
+
+class PlayerReplicationInfo(UnrealReader):
+    u_file = Engine_U
+    
+    @staticmethod
+    def player_id():
+        return PlayerReplicationInfo.read("OnlineId")
+
+    @staticmethod
+    def team_info():
+        return PlayerReplicationInfo.read("Team", "TeamInfo")
+
+    @staticmethod
+    def team_index():
+        return PlayerReplicationInfo.read("Team", "TeamIndex")
+
+    @staticmethod
+    def player_is_dead():
+        return PlayerReplicationInfo.read("bIsDead")
+
+    @staticmethod
+    def player_score():
+        return PlayerReplicationInfo.read("GameScore")
+
+    @staticmethod
+    def player_kills():
+        return PlayerReplicationInfo.read("Kills")
+
+    @staticmethod
+    def player_assists():
+        return PlayerReplicationInfo.read("Assists")
+
+    @staticmethod
+    def player_deaths():
+        return PlayerReplicationInfo.read("Deaths")
+
+    @staticmethod
+    def player_kill_streaks():
+        return PlayerReplicationInfo.read("KillingStreaks")
+
+    @staticmethod
+    def player_adam_vials_collected():
+        return PlayerReplicationInfo.read("ADAMVialsCollected")
+
+    @staticmethod
+    def player_hacks():
+        return PlayerReplicationInfo.read("Hacks")
+    
+    @staticmethod
+    def player_bigdaddy_takedowns():
+        return PlayerReplicationInfo.read("BigDaddyTakedowns")
+
+    @staticmethod
+    def player_bigdaddy_spawns():
+        return PlayerReplicationInfo.read("BigDaddySpawns")
+
+    @staticmethod
+    def player_little_sister_saves():
+        return PlayerReplicationInfo.read("LittleSisterSaves")
+
+    @staticmethod
+    def player_humiliations():
+        return PlayerReplicationInfo.read("Humiliations")
+
+    @staticmethod
+    def player_adam_grab_score():
+        return PlayerReplicationInfo.player_score() * ShockPlayerController.game_stat_adam_grab_multiplier_value()
+    
+    @staticmethod
+    def player_debug_score():
+        return PlayerReplicationInfo.read("DebugMetaScore")
+
+
+class GameReplicationInfo(UnrealReader):
+    u_file = Engine_U
+
+    @staticmethod
+    def pri_array_player_count():
+        return GameReplicationInfo.read("PRINumPlayers")
+
+    @staticmethod
+    def pri_array_online_id(prop_id):
+        return GameReplicationInfo.read("PRIArray", "Player " + str(prop_id) + " PRI", "OnlineId")
+
+
+class UserProfile(UnrealReader):
+    u_file = Engine_U
+
+    @staticmethod
+    def player_rank():
+        return UserProfile.read("mRank")
+
+    @staticmethod
+    def seconds_played():  
+         return UserProfile.read("mSecondsPlayed")
+
+    @staticmethod
+    def player_banked_adam():
+        return UserProfile.read("mBankedAdam")
+
+    @staticmethod
+    def player_lifetime_kills():
+        return UserProfile.read("mNumKills")
+
+    @staticmethod
+    def player_lifetime_wins():
+       return UserProfile.read("mNumWins")
+
+
+class ShockPlayerController(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def game_replication_info_load():
+        return ShockPlayerController.read("GRI") != 0
+
+    @staticmethod
+    def shock_player_load():
+        return ShockPlayerController.read("SMP") != 0
+
+    @staticmethod
+    def in_apartment_intro():
+        return ShockPlayerController.read("bApartmentIntro")
+
+    @staticmethod
+    def in_apartment_outro():
+        return ShockPlayerController.read("bApartmentOutro")
+
+    @staticmethod
+    def game_has_ended():
+        return ShockPlayerController.read("bGameHasEnded")
+
+    @staticmethod
+    def game_stat_kill_value():
+        return ShockPlayerController.read("GameStatKillValue")
+
+    @staticmethod
+    def game_stat_assist_value():
+        return ShockPlayerController.read("GameStatAssistValue")
+
+    @staticmethod
+    def game_stat_kill_streak_value():
+        return ShockPlayerController.read("GameStatKillStreakValue")
+
+    @staticmethod
+    def game_stat_adam_vial_value():
+        return ShockPlayerController.read("GameStatADAMVialValue")
+
+    @staticmethod
+    def game_stat_hack_value():
+        return ShockPlayerController.read("GameStatHackValue")
+
+    @staticmethod
+    def game_stat_bigdaddy_takedown_value():
+        return ShockPlayerController.read("GameStatBigDaddyTakedownValue")
+
+    @staticmethod
+    def game_stat_bigdaddy_spawn_value():
+        return ShockPlayerController.read("GameStatBigDaddySpawnValue")
+
+    @staticmethod
+    def game_stat_litte_sister_save_value():
+        return ShockPlayerController.read("GameStatLittleSisterSaveValue")
+
+    @staticmethod
+    def game_stat_humiliation_value():
+        return ShockPlayerController.read("GameStatHumiliationValue")
+
+    @staticmethod
+    def game_stat_first_place_value():
+        return ShockPlayerController.read("GameStatFirstPlaceValue")
+
+    @staticmethod
+    def game_stat_second_place_value():
+        return ShockPlayerController.read("GameStatSecondPlaceValue")
+
+    @staticmethod
+    def game_stat_last_place_value():
+        return ShockPlayerController.read("GameStatLastPlaceValue")
+
+    @staticmethod
+    def game_stat_adam_grab_multiplier_value():
+        return ShockPlayerController.read("GameAdamGrabMultiplier")
+
+    @staticmethod
+    def game_stat_debug_value():
+        return ShockPlayerController.read("GameStatDebugValue")
+
+    @staticmethod
+    def player_trial_adam_earned():
+        return ShockPlayerController.read("TrialAdamEarnedThisMatch")
+
+    @staticmethod
+    def game_winning_team():
+        return ShockPlayerController.read("GameWinningTeam")
+    
+    @staticmethod
+    def game_end_reason():
+        return ShockPlayerController.read("GameWinningReason")
+    
+    @staticmethod
+    def match_results():
+        return ShockPlayerController.read("DisplayingMatchResult")
+
+    @staticmethod
+    def match_scoreboard():
+        return ShockPlayerController.read("bGameEndHasShownScoreboard")
+    
+
+class ShockMPPlayerController(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def streamed_in_loadout():
+        return ShockMPPlayerController.read("StreamedInLoadout")
+
+
+class ShockMPGameReplicationInfo(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def current_round():
+        return ShockMPGameReplicationInfo.read("CurrentRound")
+    
+    @staticmethod
+    def main_timer():
+        return ShockMPGameReplicationInfo.read("MainTimer")
+
+    @staticmethod
+    def round_timer():
+        return ShockMPGameReplicationInfo.read("RoundTimer")
+
+    @staticmethod
+    def game_ready():
+        return ShockMPGameReplicationInfo.read("bGameReady")
+
+    @staticmethod
+    def game_running():
+        return ShockMPGameReplicationInfo.read("bGameRunning")
+    
+    @staticmethod
+    def game_mode():
+        return ShockMPGameReplicationInfo.read("GameMode")
+
+    @staticmethod
+    def hardcore_mode():
+        return ShockMPGameReplicationInfo.read("bHardcoreMode")
+
+
+class ShockUserSettings(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def character_id():
+        return ShockUserSettings.read("UserProfileCharacterId")
+
+    @staticmethod
+    def melee_weapon_index():
+        return ShockUserSettings.read("UserProfileMeleeWeaponIndex")
+
+
+class DualWieldHands(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def current_weapon():
+        return DualWieldHands.read("CurrentWeapon")
+
+    @staticmethod
+    def current_ability():
+        return DualWieldHands.read("CurrentAbility")
+
+
+class Weapon(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def friendly_name_size():
+        return Weapon.read("FriendlyNameSize")
+
+    @staticmethod
+    def friendly_name():
+        return Weapon.read("FriendlyNameID", num_bytes=Weapon.friendly_name_size())
+
+    @staticmethod
+    def active_upgrade():
+        return Weapon.read("ActiveUpgrade", "ActiveUpgrade 0")
+
+
+class PlayerWeapon(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def quick_melee():
+        return PlayerWeapon.read("IsQuickMelee")
+
+
+class Ability(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def friendly_name_size():
+        return Ability.read("FriendlyNameSize")
+    
+    @staticmethod
+    def friendly_name():
+        return Ability.read("FriendlyNameID", num_bytes=Ability.friendly_name_size())
+
+
+class Upgrade(UnrealReader):
+    u_file = ShockGame_U
+
+    @staticmethod
+    def friendly_name_size():
+        return Upgrade.read("FriendlyNameSize")
+    
+    @staticmethod
+    def friendly_name():
+        return Upgrade.read("FriendlyNameID", num_bytes=Upgrade.friendly_name_size())
+    
 
 @engine_load()
 def flash_movie():
     if in_apartment():
         return apartment_movie()
 
-    hud_movie = read_memory(Engine_U, ["FlashGUIController","HUDMovie"])
-    bink_movie = read_memory(Engine_U, ["FlashGUIController", "BackgroundBinkMovieContainer"])
+    hud_movie = FlashGUIController.hud_movie()
+    bink_movie = FlashGUIController.bink_movie_container()
 
     if hud_movie != 0:
-        hud_movie_name_size = read_memory(Engine_U,  ["FlashGUIController", "HUDMovie", "Filename Size"])
-        flash_movie = read_memory(Engine_U, ["FlashGUIController", "HUDMovie", "FlashFilename"], hud_movie_name_size)
+        flash_movie = FlashGUIController.hud_movie_file_name()
     elif bink_movie != 0:
-        bink_movie_name_size = read_memory(Engine_U, ["FlashGUIController", "BackgroundBinkMovieContainer", "Filename Size"])
-        flash_movie = read_memory(Engine_U, ["FlashGUIController", "BackgroundBinkMovieContainer", "FlashFilename"], bink_movie_name_size)
+        flash_movie = FlashGUIController.bink_movie_file_name()
     
     flash_movie = flash_movie.split('\\')[2]
 
@@ -221,39 +632,35 @@ def flash_movie():
 
 @engine_load()
 def in_lobby():
-    return online_game_settings_load() == True and lobby_num_players() > 0
-
-@engine_load()
-def lobby_num_players():
-    return read_memory(Engine_U, ["OnlineLobby", "mGameNumPlayers"])
+    return OnlineLobbyController.online_game_settings_load() == True and OnlineLobby.lobby_num_players() > 0
 
 @engine_load()
 def lobby_max_players():
-    return 6 if lobby_game_mode()[0] == "ODDFFA" else 10
+    return ADAM_GRAB_MAX_PLAYERS if lobby_game_mode() == "GAMEMODE_ODDFFA" else MAX_PLAYERS
 
 @engine_load()
 def lobby_type():
     if not in_lobby():
         return "None"
     
-    if read_memory(Engine_U, ["OnlineGameSettings", "NumPublicConnections"]) > 0:
+    if  OnlineGameSettings.num_public_connections() > 0:
         return "Public"
-    elif read_memory(Engine_U, ["OnlineGameSettings", "NumPrivateConnections"]) > 0:
+    elif OnlineGameSettings.num_private_connections() > 0:
         return "Private"
     else:
         return "None"
 
 @engine_load()
 def lobby_game_map():
-    if not in_lobby() or not online_game_settings_properties_load():
+    if not in_lobby() or not OnlineGameSettings.ogs_props_load():
         return Bioshock2Multiplayer.MAPS[17]
     
     properties_index = 0
     while properties_index < 7:
-        current_properties = read_memory(Engine_U, ["OnlineGameSettings", "Engine.Settings", "Properties", "Properties [" + str(properties_index) + "]"])
+        prop_id = OnlineGameSettings.property_id(properties_index)
 
-        if current_properties == 0x10000010:
-            lobby_map_id = read_memory(Engine_U, ["OnlineGameSettings", "Engine.Settings", "Properties", "Properties [" + str(properties_index) + "]", "Data", "Value_1"])
+        if prop_id == OGS_MAP_PROP_ID:
+            lobby_map_id = OnlineGameSettings.property_value_1(properties_index)
 
         properties_index += 1
     
@@ -261,53 +668,26 @@ def lobby_game_map():
 
 @engine_load()
 def lobby_game_mode():
-    if not in_lobby() or not online_game_settings_properties_load():
+    if not in_lobby() or not OnlineGameSettings.ogs_props_load():
         return "No Gamemode Found"
 
     properties_index = 0
     while properties_index < 7:
-        current_properties = read_memory(Engine_U, ["OnlineGameSettings", "Engine.Settings", "Properties", "Properties [" + str(properties_index) + "]"])
+        prop_id = OnlineGameSettings.property_id(properties_index)
 
-        if current_properties == 0x1000000F:
-            lobby_mode_id = read_memory(Engine_U, ["OnlineGameSettings", "Engine.Settings", "Properties", "Properties [" + str(properties_index) + "]", "Data", "Value_1"])
+        if prop_id == OGS_MODE_PROP_ID:
+            lobby_mode_id = OnlineGameSettings.property_value_1(properties_index)
 
-        if current_properties == 0x1000004E:
-            mode_hardcore = read_memory(Engine_U, ["OnlineGameSettings", "Engine.Settings", "Properties", "Properties [" + str(properties_index) + "]", "Data", "Value_1"]) != 0
+        if prop_id == OGS_HC_PROP_ID:
+            mode_hardcore = OnlineGameSettings.property_value_1(properties_index) != 0
         
         properties_index += 1
     
-    return Bioshock2Multiplayer.GAMEMODES[9] if lobby_mode_id == 1 and mode_hardcore else Bioshock2Multiplayer.GAMEMODES[lobby_mode_id]
-
-@engine_load()
-def lobby_status():
-    lobby_status_size = read_memory(Engine_U, ["OnlineLobbyController", "mGUIGameLobbyStatusSize"])
-    lobby_status_message = read_memory(Engine_U, ["OnlineLobbyController", "mGUIGameLobbyStatus"], lobby_status_size)
-
-    if lobby_status_message == 'Waiting for host to start match.':
-        return "Waiting for host to start game."
-
-    return lobby_status_message
-
-@engine_load()
-def player_rank():
-    return read_memory(Engine_U, ["UserProfile", "mRank"])
-
-@engine_load()
-def player_banked_adam():
-    return read_memory(Engine_U, ["UserProfile", "mBankedAdam"])
-
-@engine_load()
-def player_lifetime_kills():
-    return read_memory(Engine_U, ["UserProfile", "mNumKills"])
-
-@engine_load()
-def player_lifetime_wins():
-    return read_memory(Engine_U, ["UserProfile", "mNumWins"])
+    return Bioshock2Multiplayer.GAME_MODES[9] if lobby_mode_id == 1 and mode_hardcore else Bioshock2Multiplayer.GAME_MODES[lobby_mode_id]
 
 @engine_load()
 def player_time_played():
-    mTime = read_memory(Engine_U, ["UserProfile", "mSecondsPlayed"])
-    
+    mTime = UserProfile.seconds_played()
     mHours = mTime // 3600
     mSeconds_left = mTime % 3600
     mMinutes = mSeconds_left // 60
@@ -317,78 +697,22 @@ def player_time_played():
 
 @engine_load()
 def player_splicer():
-    return Bioshock2Multiplayer.CHARACTERS[read_memory(ShockGame_U, ["ShockUserSettings", "UserProfileCharacterId"])]
-
-@engine_load()
-def player_kills():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "Kills"])
-
-@engine_load()
-def player_assists():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "Assists"])
-
-@engine_load()
-def player_deaths():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "Deaths"])
-
-@engine_load()
-def player_kill_streaks():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "KillingStreaks"])
-
-@engine_load()
-def player_adam_vials_collected():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "ADAMVialsCollected"])
-
-@engine_load()
-def player_hacks():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "Hacks"])
-
-@engine_load()
-def player_bigdaddy_takedowns():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "BigDaddyTakedowns"])
-
-@engine_load()
-def player_bigdaddy_spawns():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "BigDaddySpawns"])
-
-@engine_load()
-def player_little_sister_saves():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "LittleSisterSaves"])
-
-@engine_load()
-def player_humiliations():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "Humiliations"])
-
-@engine_load()
-def player_adam_grab_score():
-    return player_score() * game_stat_adam_grab_multiplier_value()
-
-@engine_load()
-def player_debug_score():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "DebugMetaScore"])
-
-@engine_load()
-def player_trial_adam_earned():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "TrialAdamEarnedThisMatch"])
-
-@engine_load()
-def player_score():
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "GameScore"])
+    return Bioshock2Multiplayer.CHARACTERS[ShockUserSettings.character_id()]
 
 @engine_load()
 def player_ranking():
     rankings = player_replication_array()
 
-    if game_mode()[0] == "FFA" or game_mode()[0] == "ODDFFA" or game_mode()[0] == "DLC2":
-        player_id = read_memory(Engine_U, ["PlayerReplicationInfo", "OnlineId", "Uid"])
+    if game_mode_type() == "Non-Team":
+        player_id = PlayerReplicationInfo.player_id()
         if player_id == rankings[0]:
             player_position = 1
         else:
             player_position = rankings.index(player_id) + 1
-    elif game_mode()[0] == "TDM" or game_mode()[0] == "TDMHC" or game_mode()[0] == "HOG" or game_mode()[0] == "TC" or  game_mode()[0] == "ODD":
+    elif game_mode_type() == "Team":
         if team_game():
-            local_player_team = read_memory(Engine_U, ["PlayerReplicationInfo", "Team", "TeamIndex"])
-            game_winning_team = read_memory(ShockGame_U, ["ShockPlayerController", "GameWinningTeam"])
+            local_player_team = PlayerReplicationInfo.team_index()
+            game_winning_team = ShockPlayerController.game_winning_team()
             if game_winning_team != 255:
                 if game_winning_team == local_player_team:
                     player_position = 1
@@ -404,10 +728,10 @@ def player_scoreboard_score():
     player_position = player_ranking()
 
     if player_position == 1:
-        raw_rank_value = game_stat_first_place_value()
+        raw_rank_value = ShockPlayerController.game_stat_first_place_value()
     else:
         ranking_percent = 1.0 - (float(player_position - 2) / float(game_num_players()))
-        raw_rank_value = (ranking_percent * float(game_stat_second_place_value())) + ((1.0 - ranking_percent) * float(game_stat_last_place_value()))
+        raw_rank_value = (ranking_percent * float(ShockPlayerController.game_stat_second_place_value())) + ((1.0 - ranking_percent) * float(ShockPlayerController.game_stat_last_place_value()))
    
     scoreboard_rank_score = int(raw_rank_value)
 
@@ -418,14 +742,14 @@ def player_scoreboard_score():
 
 @engine_load()
 def player_replication_array():
-    if not game_replication_info_load():
+    if not ShockPlayerController.game_replication_info_load():
         return 3
 
     current_pri_index = 1
     rankings = []
 
     while current_pri_index <= game_num_players() and current_pri_index <= game_max_players():
-        player_id = read_memory(Engine_U, ["GameReplicationInfo", "PRIArray", "Player " + str(current_pri_index) + " PRI", "OnlineId"])
+        player_id = GameReplicationInfo.pri_array_online_id(current_pri_index)
         rankings.append(player_id)
         current_pri_index += 1
 
@@ -434,22 +758,22 @@ def player_replication_array():
 @engine_load()
 def player_total_score():
     total_score = 0
-    kill_score = player_kills() * game_stat_kill_value()
-    assist_score = player_assists() * game_stat_assist_value()
-    kill_streak_score = player_kill_streaks() * game_stat_kill_streak_value()
-    adam_vial_score = player_adam_vials_collected() * game_stat_adam_vial_value()
-    hack_score = player_hacks() * game_stat_hack_value()
-    big_daddy_score = player_bigdaddy_spawns() * game_stat_bigdaddy_spawn_value()
-    big_daddy_takedown_score = player_bigdaddy_takedowns() * game_stat_bigdaddy_takedown_value()
-    little_sister_score = player_little_sister_saves() * game_stat_litte_sister_save_value()
-    humiliation_score = player_humiliations() * game_stat_humiliation_value()
-    debug_score = player_debug_score() * game_stat_debug_value()
-    trial_adam_score = player_trial_adam_earned()
+    kill_score = PlayerReplicationInfo.player_kills() * ShockPlayerController.game_stat_kill_value()
+    assist_score = PlayerReplicationInfo.player_assists() * ShockPlayerController.game_stat_assist_value()
+    kill_streak_score = PlayerReplicationInfo.player_kill_streaks() * ShockPlayerController.game_stat_kill_streak_value()
+    adam_vial_score = PlayerReplicationInfo.player_adam_vials_collected() * ShockPlayerController.game_stat_adam_vial_value()
+    hack_score = PlayerReplicationInfo.player_hacks() * ShockPlayerController.game_stat_hack_value()
+    big_daddy_score = PlayerReplicationInfo.player_bigdaddy_spawns() * ShockPlayerController.game_stat_bigdaddy_spawn_value()
+    big_daddy_takedown_score = PlayerReplicationInfo.player_bigdaddy_takedowns() * ShockPlayerController.game_stat_bigdaddy_takedown_value()
+    little_sister_score = PlayerReplicationInfo.player_little_sister_saves() * ShockPlayerController.game_stat_litte_sister_save_value()
+    humiliation_score = PlayerReplicationInfo.player_humiliations() * ShockPlayerController.game_stat_humiliation_value()
+    debug_score = PlayerReplicationInfo.player_debug_score() * ShockPlayerController.game_stat_debug_value()
+    trial_adam_score = ShockPlayerController.player_trial_adam_earned()
     adam_grab_score = 0
     scoreboard_rank_score = player_scoreboard_score()
 
-    if lobby_game_mode()[0] == "ODDFFA" or lobby_game_mode()[0] == "ODD":
-        adam_grab_score = player_adam_grab_score()
+    if lobby_game_mode() == "GAMEMODE_ODD" or lobby_game_mode() == "GAMEMODE_ODDFFA":
+        adam_grab_score = PlayerReplicationInfo.player_adam_grab_score()
 
     total_score = ((((((((((((kill_score + assist_score) + kill_streak_score) + adam_vial_score) + hack_score) + big_daddy_score) + big_daddy_takedown_score) + little_sister_score) + humiliation_score) + adam_grab_score) + debug_score) + trial_adam_score) + scoreboard_rank_score)
 
@@ -457,45 +781,41 @@ def player_total_score():
 
 @engine_load()
 def player_weapon():
-    if not shock_player_load()  or read_memory(ShockGame_U, ["DualWieldHands", "CurrentWeapon"]) == 0:
+    if not ShockPlayerController.shock_player_load()  or DualWieldHands.current_weapon() == 0:
         return "None"
     
-    weapon_friendly_name_size = read_memory(ShockGame_U, ["Weapon", "FriendlyNameSize"])
-    weapon_friendly_name = read_memory(ShockGame_U, ["Weapon", "FriendlyNameID"], weapon_friendly_name_size)
+    weapon = Weapon.friendly_name()
 
-    if weapon_friendly_name == "Wrench" and game_mode()[0] == "DLC2":
+    if weapon == "Wrench" and game_mode() == "GAMEMODE_DLC_2":
         return "Golf Club"
-    elif weapon_friendly_name == "Wrench":
+    elif weapon == "Wrench":
         return "Melee Weapon"
 
-
-    return weapon_friendly_name if weapon_friendly_name in Bioshock2Multiplayer.WEAPONS else "No Weapon"
+    return weapon if weapon in Bioshock2Multiplayer.WEAPONS else "No Weapon"
 
 @engine_load()
 def player_plasmid():
-    if not shock_player_load()  or read_memory(ShockGame_U, ["DualWieldHands", "CurrentAbility"]) == 0:
+    if not ShockPlayerController.shock_player_load()  or DualWieldHands.current_ability() == 0:
         return "None"
 
-    plasmid_friendly_name_size = read_memory(ShockGame_U, ["Ability", "FriendlyNameSize"])
-    plasmid_friendly_name = read_memory(ShockGame_U, ["Ability", "FriendlyNameID"], plasmid_friendly_name_size)
+    plasmid = Ability.friendly_name()
 
-    return plasmid_friendly_name if plasmid_friendly_name in Bioshock2Multiplayer.PLASMIDS else "No Plasmid"
+    return plasmid if plasmid in Bioshock2Multiplayer.PLASMIDS else "No Plasmid"
 
 @engine_load()
 def player_upgrade():
-    if not shock_player_load() or read_memory(ShockGame_U, ["Weapon", "ActiveUpgrade", "ActiveUpgrade 0"]) == 0:
+    if not ShockPlayerController.shock_player_load() or Weapon.active_upgrade() == 0:
         return "No Upgrade"
+    
+    upgrade = Upgrade.friendly_name()
 
-    upgrade_friendly_name_size = read_memory(ShockGame_U, ["Upgrade", "FriendlyNameSize"])
-    upgrade_friendly_name = read_memory(ShockGame_U, ["Upgrade", "FriendlyNameID"], upgrade_friendly_name_size)
-
-    return upgrade_friendly_name if upgrade_friendly_name in Bioshock2Multiplayer.UPGRADES else "No Upgrade"
+    return upgrade if upgrade in Bioshock2Multiplayer.UPGRADES else "No Upgrade"
 
 @engine_load()
 def player_quick_melee():
     splicer = player_splicer()
 
-    quick_weapon = read_memory(ShockGame_U, ["ShockUserSettings", "UserProfileMeleeWeaponIndex"])
+    quick_weapon = ShockUserSettings.melee_weapon_index()
 
     unique_id, min_range, max_range, unique = Bioshock2Multiplayer.MELEE_WEAPONS[splicer]
 
@@ -505,22 +825,19 @@ def player_quick_melee():
         return Bioshock2Multiplayer.MELEE_WEAPONS["Default Melee"][quick_weapon - min_range]
 
 @engine_load()
-def player_dead():
-    if not game_replication_info_load():
-        return True
-
-    return read_memory(Engine_U, ["PlayerReplicationInfo", "bIsDead"])
-
-@engine_load()
 def player_melee():
-    if not shock_player_load() or read_memory(ShockGame_U, ["DualWieldHands", "CurrentWeapon"]) == 0:
+    if not ShockPlayerController.shock_player_load() or DualWieldHands.current_weapon() == 0:
         return False
     
-    return read_memory(ShockGame_U, ["PlayerWeapon", "IsQuickMelee"])
+    return PlayerWeapon.quick_melee()
+
+@engine_load()
+def player_dead():
+    return not ShockPlayerController.game_replication_info_load() or PlayerReplicationInfo.player_is_dead()
 
 @engine_load()
 def player_bigdaddy():
-    return player_weapon() == "Rivet Gun" or player_plasmid == "Proximity Mine" or player_plasmid() == "Stomp"
+    return player_weapon() == "Rivet Gun" and (player_plasmid() == "Proximity Mine" or player_plasmid() == "Stomp")
 
 @engine_load()
 def player_game_status():
@@ -537,7 +854,7 @@ def player_game_status():
             return "Melee Attacking with the Rivet Gun"
         elif player_bigdaddy():
             return "Roaming as the Big Daddy" if player_plasmid() != "Stomp" else "Stomping as the Big Daddy"
-        elif game_mode()[0] == "DLC2":
+        elif game_mode() == "GAMEMODE_DLC_2":
             return "Whacking other players with the " + player_weapon()
         else: 
             return player_upgrade() + " " + player_weapon() + " with " + player_plasmid() if player_upgrade() != "No Upgrade" else player_weapon() + " with " + player_plasmid()
@@ -547,193 +864,128 @@ def player_game_status():
 
 @engine_load()
 def team_game():
-    if not game_replication_info_load():
-        return False
-    
-    return read_memory(Engine_U, ["GameReplicationInfo", "Teams"]) != 0
+    return False if not not ShockPlayerController.game_replication_info_load() else PlayerReplicationInfo.team_info() != 0
 
 @engine_load()
 def game_mode():
-    if not game_replication_info_load():
-        return Bioshock2Multiplayer.GAMEMODES["None"]
+    if not ShockPlayerController.game_replication_info_load():
+        return Bioshock2Multiplayer.GAME_MODES["None"]
 
-    gamemode = read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "GameMode"])
-    mode_hardcore = read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "bHardcoreMode"])
-    return Bioshock2Multiplayer.GAMEMODES[9] if gamemode == 1 and mode_hardcore else Bioshock2Multiplayer.GAMEMODES[gamemode]        
+    gamemode = ShockMPGameReplicationInfo.game_mode()
+    mode_hardcore = ShockMPGameReplicationInfo.hardcore_mode()
+    return Bioshock2Multiplayer.GAME_MODES[9] if gamemode == 1 and mode_hardcore else Bioshock2Multiplayer.GAME_MODES[gamemode]        
+
+@engine_load()
+def game_mode_type():
+    game_mode_id = Bioshock2Multiplayer[game_mode()]
+ 
+    game_mode_types = {
+        "GAMEMODE_FFA": "Non-Team",
+        "GAMEMODE_ODDFFA": "Non-Team",
+        "GAMEMODE_DLC_2": "Non-Team",
+        "GAMEMODE_TDM": "Team",
+        "GAMEMODE_TC": "Team",
+        "GAMEMODE_TDMHC": "Team",
+        "GAMEMODE_HOG": "Team",
+        "GAMEMODE_ODD": "Team",
+        "GAMEMODE_NONE": "Team"
+    }
+
+    return game_mode_types[game_mode_id]
+
+@engine_load()
+def game_map():
+    return Bioshock2Multiplayer.MAP_URLS[GameEngine.last_url_map_name()]
 
 @engine_load()
 def game_num_players():
-    if not game_replication_info_load():
+    if not ShockPlayerController.game_replication_info_load():
         return 0
     
-    return read_memory(Engine_U, ["GameReplicationInfo", "PRINumPlayers"])
+    return GameReplicationInfo.pri_array_player_count()
 
 @engine_load()
 def game_max_players():
-    return 6 if game_mode()[0] == "ODDFFA" else 10
+    return 6 if game_mode() == "GAMEMODE_ODDFFA" else 10
 
 @engine_load()
 def game_round():
-    if not game_replication_info_load():
-        return 0
-    
-    return read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "CurrentRound"])
+    return 0 if not ShockPlayerController.game_replication_info_load() else ShockMPGameReplicationInfo.current_round()
 
 @engine_load()
 def game_timer():
-    if not game_replication_info_load():
+    if not ShockPlayerController.game_replication_info_load():
         return f"00:00"
     
-    main_timer = read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "MainTimer"])
+    main_timer = ShockMPGameReplicationInfo.main_timer()
     main_minutes, main_seconds = divmod(main_timer, 60)
     return f"{int(main_minutes):2d}:{int(main_seconds):02d}"
 
 @engine_load()
 def game_round_timer():
-    if not game_replication_info_load():
-        return 0
-    
-    return int(read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "RoundTimer"]))
-
-@engine_load()
-def game_end_reason():
-    return Bioshock2Multiplayer.WIN_REASONS[read_memory(ShockGame_U, ["ShockPlayerController", "GameWinningReason"])]
-
-@engine_load()
-def game_stat_kill_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatKillValue"])
-
-@engine_load()
-def game_stat_assist_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatAssistValue"])
-
-@engine_load()
-def game_stat_kill_streak_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatKillStreakValue"])
-
-@engine_load()
-def game_stat_adam_vial_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatADAMVialValue"])
-
-@engine_load()
-def game_stat_hack_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatHackValue"])
-
-@engine_load()
-def game_stat_bigdaddy_takedown_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatBigDaddyTakedownValue"])
-
-@engine_load()
-def game_stat_bigdaddy_spawn_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatBigDaddySpawnValue"])
-
-@engine_load()
-def game_stat_litte_sister_save_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatLittleSisterSaveValue"])
-
-@engine_load()
-def game_stat_humiliation_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatHumiliationValue"])
-
-@engine_load()
-def game_stat_first_place_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatFirstPlaceValue"])
-
-@engine_load()
-def game_stat_second_place_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatSecondPlaceValue"])
-
-@engine_load()
-def game_stat_last_place_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatLastPlaceValue"])
-
-@engine_load()
-def game_stat_adam_grab_multiplier_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameAdamGrabMultiplier"])
-
-@engine_load()
-def game_stat_debug_value():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "GameStatDebugValue"])
+    return 0 if not ShockPlayerController.game_replication_info_load() else int(ShockMPGameReplicationInfo.round_timer())
 
 
 @engine_load()
 def streamed_loadout():
-    return read_memory(ShockGame_U, ["ShockMPPlayerController", "StreamedInLoadout"]) >= 0
+    return ShockMPPlayerController.streamed_in_loadout() >= 0
 
 @engine_load()
 def pre_game():
-    return game_round_timer() > 0 if game_replication_info_load() else False
+    return game_round_timer() > 0 if ShockPlayerController.game_replication_info_load() else False
 
 @engine_load()
 def running_game():
-    if not game_replication_info_load():
-        return False
-    
-    game_ready = read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "bGameReady"]) == False
-    return game_ready and read_memory(ShockGame_U, ["ShockMPGameReplicationInfo", "bGameRunning"])
+    return False if not ShockPlayerController.game_replication_info_load() else not ShockMPGameReplicationInfo.game_ready() and ShockMPGameReplicationInfo.game_running()
 
 @engine_load()
-def end_game():
-    if not game_replication_info_load():
-        return False
-    
-    return read_memory(ShockGame_U, ["ShockPlayerController", "bGameHasEnded"])
+def end_game(): 
+    return not ShockPlayerController.game_replication_info_load() or ShockPlayerController.game_has_ended()
+
+@engine_load()
+def end_game_reason():
+    return Bioshock2Multiplayer.GAME_WINNING_REASON[ShockPlayerController.game_end_reason()]
 
 @engine_load()
 def end_movie():
-    if match_scoreboard() and not match_results():
-        return "Score: "  + str(player_score()) + " Kills: " + str(player_kills()) + " Streaks: " + str(player_kill_streaks())
-    elif match_results():
+    if ShockPlayerController.match_scoreboard() and not ShockPlayerController.match_results():
+        return "Score: "  + str(PlayerReplicationInfo.player_score()) + " Kills: " + str(PlayerReplicationInfo.player_kills()) + " Streaks: " + str(PlayerReplicationInfo.player_kill_streaks())
+    elif ShockPlayerController.match_results():
         total_score = player_total_score()
         player_position = player_ranking()
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(player_position, "th")
         return "Total Adam: " + str(total_score) + " Ranking: " + str(player_position) + suffix
     else:
         return "Match has Ended"
-    
-@engine_load()
-def match_results():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "DisplayingMatchResult"])
-
-@engine_load()
-def match_scoreboard():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "bGameEndHasShownScoreboard"])
 
 @engine_load()
 def apartment_movie():
-    if in_apartment_lobby():
+    if OnlineLobbyController.using_bathysphere():
         return Bioshock2Multiplayer.FLASH_MOVIES["Apartment Lobby"]
-    elif in_apartment_intro():
+    elif ShockPlayerController.in_apartment_intro():
         return Bioshock2Multiplayer.FLASH_MOVIES["Apartment Intro"]
-    elif in_apartment_outro():
+    elif ShockPlayerController.in_apartment_outro():
         return Bioshock2Multiplayer.FLASH_MOVIES["Apartment Outro"]
     else:
         return Bioshock2Multiplayer.FLASH_MOVIES["Apartment"]
 
 @engine_load()
 def in_apartment():
-    last_url_size = read_memory(Engine_U, ["GameEngine", "LastURL", "Map Size"])
-    last_url_map = read_memory(Engine_U, ["GameEngine", "LastURL", "DE_Map Name"], last_url_size)
-    return Bioshock2Multiplayer.MAP_URLS[last_url_map] == "Apartment Lobby"
-
-@engine_load()
-def in_apartment_lobby():
-    return read_memory(Engine_U, ["OnlineLobbyController", "mGUIUsingBathysphere"])
-
-@engine_load()
-def in_apartment_intro():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "bApartmentIntro"])
-
-@engine_load()
-def in_apartment_outro():
-    return read_memory(ShockGame_U, ["ShockPlayerController", "bApartmentOutro"])
+    return game_map() == "Apartment Lobby"
 
 def debug():
     print(flash_movie() + "\n")
     if (in_apartment()):
         print("Apartment Lobby", in_apartment())
-        print("Apartment Lobby Menu", in_apartment_lobby())
-        print("Apartment Intro:", in_apartment_intro())
-        print("Apartment Outro", in_apartment_outro())
+        print("Apartment Lobby Menu", OnlineLobbyController.using_bathysphere())
+        print("Apartment Intro:", ShockPlayerController.in_apartment_intro())
+        print("Apartment Outro", ShockPlayerController.in_apartment_outro())
     print(player_splicer())
 
+
+# Finish Refactoring.
+# Determine if caching is needed.
+# Create PyInstaller .bat script for easy .exe creation.
+# Test .exe
+# Modify readme for Discord Application Instructions
+# Begin Intial RPC tests (Non-Anti Cheat)
