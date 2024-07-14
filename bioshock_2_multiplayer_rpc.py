@@ -218,6 +218,7 @@ def rpc_status():
         bio2_details, bio2_states, bio2_buttons = rpc_game_details()
         bio2_image, bio2_text = rpc_game_map()
         bio2_small_image, bio2_small_text = rpc_plasmid()
+        
 
     return bio2_details, bio2_states, bio2_buttons, bio2_image, bio2_text, bio2_small_image, bio2_small_text
 

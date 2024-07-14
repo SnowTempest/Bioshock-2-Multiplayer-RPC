@@ -239,6 +239,26 @@ class OnlineLobby(UnrealReader):
     @staticmethod
     def lobby_num_players():
         return OnlineLobby.read("mGameNumPlayers")
+    
+    @staticmethod
+    def player_nickname_size(player_index):
+        return OnlineLobby.read("mGamePlayers", "Player " + str(player_index), "NickNameSize")
+    
+    @staticmethod
+    def player_nickname(player_index):
+        return OnlineLobby.read("mGamePlayers", "Player " + str(player_index), "NickNameID", num_bytes=OnlineLobby.player_nickname_size(player_index))
+
+    @staticmethod
+    def player_rank(player_index):
+        return OnlineLobby.read("mGamePlayers", "Player " + str(player_index), "Rank")
+    
+    @staticmethod
+    def player_rebirth_count(player_index):
+        return OnlineLobby.read("mGamePlayers", "Player " + str(player_index), "RebirthCount")
+
+    @staticmethod
+    def player_steam_id(player_index):
+        return OnlineLobby.read("mGamePlayers", "Player " + str(player_index), "UniqueId")
 
 
 class OnlineGameSettings(UnrealReader):
@@ -297,12 +317,12 @@ class PlayerReplicationInfo(UnrealReader):
     u_file = Engine_U
     
     @staticmethod
-    def player_id():
+    def player_steam_id():
         return PlayerReplicationInfo.read("OnlineId")
 
     @staticmethod
     def team_info():
-        return PlayerReplicationInfo.read("Team", "TeamInfo")
+        return PlayerReplicationInfo.read("Team")
 
     @staticmethod
     def team_index():
@@ -667,7 +687,7 @@ def lobby_game_map():
 
 def lobby_game_mode():
     if not in_lobby() or not OnlineGameSettings.ogs_props_load():
-        return "No Gamemode Found"
+        return Bioshock2Multiplayer.GAME_MODES["None"]
 
     properties_index = 0
     while properties_index < 7:
@@ -698,28 +718,33 @@ def player_splicer():
 def player_ranking():
     rankings = player_replication_array()
 
-    if game_mode_type() == "Non-Team":
-        player_id = PlayerReplicationInfo.player_id()
+    if rankings == "None":
+        return 0
+    
+    if team_game():
+        local_player_team = PlayerReplicationInfo.team_index()
+        game_winning_team = ShockPlayerController.game_winning_team()
+        if game_winning_team != 255:
+            if game_winning_team == local_player_team:
+                player_position = 1
+            else:
+                player_position = 2
+        else:
+            player_position = 2
+    else:
+        player_id = PlayerReplicationInfo.player_steam_id()
         if player_id == rankings[0]:
             player_position = 1
         else:
             player_position = rankings.index(player_id) + 1
-    elif game_mode_type() == "Team":
-        if team_game():
-            local_player_team = PlayerReplicationInfo.team_index()
-            game_winning_team = ShockPlayerController.game_winning_team()
-            if game_winning_team != 255:
-                if game_winning_team == local_player_team:
-                    player_position = 1
-                else:
-                    player_position = 2
-            else:
-                player_position = 2
 
     return player_position
 
 def player_scoreboard_score():
     player_position = player_ranking()
+
+    if player_position == 0:
+        return 0
 
     if player_position == 1:
         raw_rank_value = ShockPlayerController.game_stat_first_place_value()
@@ -736,7 +761,7 @@ def player_scoreboard_score():
 
 def player_replication_array():
     if not ShockPlayerController.game_replication_info_load():
-        return 3
+        return "None"
 
     current_pri_index = 1
     rankings = []
@@ -749,6 +774,9 @@ def player_replication_array():
     return rankings
 
 def player_total_score():
+    if not ShockPlayerController.game_replication_info_load():
+        return 0
+
     total_score = 0
     kill_score = PlayerReplicationInfo.player_kills() * ShockPlayerController.game_stat_kill_value()
     assist_score = PlayerReplicationInfo.player_assists() * ShockPlayerController.game_stat_assist_value()
@@ -846,7 +874,7 @@ def player_game_status():
         return end_movie()
 
 def team_game():
-    return False if not not ShockPlayerController.game_replication_info_load() else PlayerReplicationInfo.team_info() != 0
+    return False if not ShockPlayerController.game_replication_info_load() else PlayerReplicationInfo.team_info() != 0
 
 def game_mode():
     if not ShockPlayerController.game_replication_info_load():
@@ -855,23 +883,6 @@ def game_mode():
     gamemode = ShockMPGameReplicationInfo.game_mode()
     mode_hardcore = ShockMPGameReplicationInfo.hardcore_mode()
     return Bioshock2Multiplayer.GAME_MODES[9] if gamemode == 1 and mode_hardcore else Bioshock2Multiplayer.GAME_MODES[gamemode]        
-
-def game_mode_type():
-    game_mode_id = game_mode()
- 
-    game_mode_types = {
-        "GAMEMODE_FFA": "Non-Team",
-        "GAMEMODE_ODDFFA": "Non-Team",
-        "GAMEMODE_DLC_2": "Non-Team",
-        "GAMEMODE_TDM": "Team",
-        "GAMEMODE_TC": "Team",
-        "GAMEMODE_TDMHC": "Team",
-        "GAMEMODE_HOG": "Team",
-        "GAMEMODE_ODD": "Team",
-        "GAMEMODE_NONE": "Team"
-    }
-
-    return game_mode_types[game_mode_id]
 
 def game_map():
     return Bioshock2Multiplayer.MAP_URLS[GameEngine.last_url_map_name()]
@@ -900,13 +911,13 @@ def streamed_loadout():
     return ShockMPPlayerController.streamed_in_loadout() >= 0
 
 def pre_game():
-    return game_round_timer() > 0 if ShockPlayerController.game_replication_info_load() else False
+    return False if not ShockPlayerController.game_replication_info_load() else game_round_timer() > 0
 
 def running_game():
     return False if not ShockPlayerController.game_replication_info_load() else not ShockMPGameReplicationInfo.game_ready() and ShockMPGameReplicationInfo.game_running()
 
 def end_game(): 
-    return not ShockPlayerController.game_replication_info_load() or ShockPlayerController.game_has_ended()
+    return False if not ShockPlayerController.game_replication_info_load() else ShockPlayerController.game_has_ended()
 
 def end_game_reason():
     return Bioshock2Multiplayer.GAME_WINNING_REASON[ShockPlayerController.game_end_reason()]
@@ -943,7 +954,12 @@ def debug():
         print("Apartment Intro:", ShockPlayerController.in_apartment_intro())
         print("Apartment Outro", ShockPlayerController.in_apartment_outro())
     print(player_splicer())
-    print(game_mode_type())
+
+
+# Double check code
+# Finish any final refactorizations
+# readme
+# Start initial testing.
 
 # Create PyInstaller .bat script for easy .exe creation.
 # Test .exe
