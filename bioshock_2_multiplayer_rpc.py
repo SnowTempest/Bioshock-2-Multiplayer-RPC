@@ -1,12 +1,24 @@
+import json
+import traceback
+from time import sleep, time
+import pypresence as PyPresence
+from pymem.exception import ProcessNotFound
+from tkinter import Tk, messagebox
 from bioshock_2_multiplayer import *
-from bioshock_2_multiplayer import PlayerReplicationInfo as PRI
-from bioshock_2_multiplayer import UserProfile as ACTIVE_PROFILE
-
+from bioshock_2_multiplayer import PlayerReplicationInfo as PRI, UserProfile as ACTIVE_PROFILE
 
 MAP_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Maps/Icons/"
 SPLICER_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Characters/"
 PLASMID_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Plasmids/"
 DISCORD_LINK = "https://discord.gg/4ydTGHfFPQ"
+INTERVAL_MAX = 10
+
+class RPCDATA:
+    def __init__(self, ID, MODE, UPDATE_INTERVAL):
+        self.ID = ID
+        self.MODE = MODE
+        self.UPDATE_INTERVAL = UPDATE_INTERVAL
+
 
 class Bioshock2MultiplayerRPC:
     MAP_IMAGES = {
@@ -189,6 +201,135 @@ class Bioshock2MultiplayerRPC:
         }
     }
 
+def rpc_clear_log():
+    with open("error_log.json", "w") as error_log:
+        error_log.write("{\n\n}")
+
+def rpc_show_error(error, error_message):
+    root = Tk()
+    root.withdraw()
+    messagebox.showerror(error, error_message + " Please look at error_log.json in the program's directory for more details.")
+    root.destroy()
+
+def rpc_close(close_message):
+    print(close_message)
+    sleep(4)
+    exit()
+
+def rpc_data():
+    with open ("rpc_data.json", "r") as json_file:
+        json_data = json.load(json_file)
+    
+    rpc_id = json_data.get("APP_ID", "")
+    rpc_mode = json_data.get("MODE", "PERFORMANCE")
+    rpc_interval = min(json_data.get("UPDATE_INTERVAL", INTERVAL_MAX), INTERVAL_MAX)
+
+    if rpc_mode not in ["REALTIME", "PERFORMANCE"]:
+        rpc_mode = "PERFORMANCE"
+
+    return RPCDATA(rpc_id, rpc_mode, rpc_interval)
+
+def rpc_log_error(error, error_message, addition_details):
+
+    log = {
+        "Error": error,
+        "Error Message": error_message,
+        "Additional": addition_details.split("\n"),
+        "Traceback": traceback.format_exc().splitlines(),
+        "Help": "If you are in need of any assistence with any errors please join the Bioshock 2 Multiplayer Discord and contact either the Admins or the Developer.",
+        "Discord": DISCORD_LINK
+    }
+
+    log_to_json = json.dumps(log, indent=2)
+
+    with open("error_log.json", "w") as error_log:
+        error_log.write(log_to_json)
+
+    rpc_show_error(error, error_message)
+    rpc_close("Program will close in 4 seconds.")
+
+def rpc_init():
+    try:
+        print("Starting RPC Client")
+        rpc_clear_log()
+
+        rpc_props = rpc_data()
+        client_id = rpc_props.ID
+
+        if client_id == "":
+            raise PyPresence.DiscordError(code="rpc_init", message="An error has occured trying to retrieve the Application ID in rpc_data.json.")
+
+        rpc = PyPresence.Presence(client_id, pipe=0)
+        rpc.connect()
+        return rpc, rpc_props
+
+    except PyPresence.DiscordNotFound:
+        rpc_log_error(
+            "Pypresence Error: DiscordNotFound", 
+            "Discord is not open or was not found. Please open Discord before launching the Bioshock 2 Multiplayer RPC.", 
+            "Discord was not open during the RPC initialization or the RPC channel was already in use by another program. \nPlease re-open Discord or close any other RPC programs before re-attempting Bioshock 2 Multiplayer RPC connection."
+        )
+    except PyPresence.DiscordError:
+        rpc_log_error(
+            "Pypresence Error: DiscordError", 
+            "Invalid Discord \"APP_ID\". Please make sure you have the right value stored in rpc_data.json and try again.", 
+            "There was an error trying to connect to the User's Discord Developer Application ID. \nPlease verify that your Application ID is valid and fits the format in rpc_data.json. Example Format: \"APP_ID\":123456789098765432"
+        )
+
+def rpc_loop():
+    rpc, rpc_data = rpc_init()
+
+    print("RPC has been Initialized")
+    print("\nYou Can Close the RPC at Any Time Using Ctrl + C.\n")
+
+    if rpc_data.MODE == "REALTIME":
+            rpc_sleep = 0
+    elif rpc_data.MODE == "PERFORMANCE":
+            rpc_sleep = RPCDATA.UPDATE_INTERVAL
+    
+    bio2_start = int(time())
+
+    try:
+        while True:
+            if not bioshock_2_status():
+                rpc_close("\nBioshock 2 Multiplayer is not Open. Please Open before Continuing. Program will Now Close.")
+            bio2_details, bio2_state, bio2_buttons, bio2_image, bio2_text, bio2_small_image, bio2_small_text = rpc_status()
+            rpc.update(buttons=bio2_buttons, state=bio2_state, details=bio2_details, large_text=bio2_text, large_image=bio2_image, small_image=bio2_small_image, small_text=bio2_small_text, start=bio2_start)
+            sleep(rpc_sleep)
+            
+    except KeyboardInterrupt:
+        rpc_close("\nBioshock 2 Multiplayer RPC Will Now Close.")
+    except PyPresence.InvalidID:
+        rpc_log_error(
+            "Pypresence Error: InvalidID", 
+            "Discord either closed or crashed. Bioshock 2 Multiplayer RPC will be closed.", 
+            "There was an issue during the RPC call trying to contact Discord. Either Discord has crashed or something bad happened with the RPC Program. \nOther causes of this error are currently unknown. Please let the Developer know if this error occurs."
+        )
+    except ProcessNotFound:
+        rpc_log_error(
+            "Pymem Error: ProcessNotFound",
+            "Bioshock 2 Multiplayer is not open or crashed. Bioshock 2 Multiplayer RPC will now close.", 
+            "Bioshock 2 Multiplayer was not found in the User's list of processes thus it was no longer safe to continue Bioshock 2 Multiplayer RPC connection. \nThis error helps prevent any memory read errors that might occur."
+        )
+    except PyPresence.PipeClosed:
+        rpc_log_error(
+            "Pypresence Error: PipeClosed", 
+            "Discord either closed or crashed causing the RPC connection to close. Bioshock 2 Multiplayer RPC will be closed.",
+            "This issue occurs when Discord itself crashes while the RPC is connected causing the Pipe Connection to be closed. \nSimply restart the Bioshock 2 Multiplayer RPC again after Discord has been re-opened."
+        )
+    except PyPresence.ResponseTimeout:
+        rpc_log_error(
+            "Pypresence Error: ResponseTimeout", 
+            "Bioshock 2 Multiplayer RPC did not get a response from the Discord IPC Pipe in time.",
+            "This issue occurs when Discord either freezes or bugs out. This could happen during very long RPC sessions. Easy fix is to restart the Bioshock 2 Multiplayer RPC."
+        )
+    except Exception as error:
+        rpc_log_error(
+            f"Error: {error}", 
+            "An Unknown error has occured. Bioshock 2 Multiplayer RPC has closed as a result.", 
+            "This error is an unknown error that the developer has not yet encountered or dealt with. \nPlease DM the developer on Discord the contents of error_log.json so he may debug what has occurred."
+        )
+
 def rpc_status():
     bio2_details, bio2_states = rpc_flash_details()
     bio2_image, bio2_text = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["DLC"], bio2_details
@@ -203,13 +344,13 @@ def rpc_status():
         bio2_text = bio2_details
     elif bio2_details in ["Lobby", "Apartment Lobby"]:
         bio2_details, bio2_states, bio2_buttons = rpc_lobby_details()
-        bio2_image, bio2_text = rpc_lobby_map()
+        bio2_image, bio2_text = rpc_game_map()
     elif bio2_details in ["Rank Up"]:
         bio2_details, bio2_states, bio2_buttons = rpc_rank_details()
         bio2_image, bio2_text = MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES["Ranked Rewards"], "Ranked Rewards"
     elif in_lobby() and bio2_details not in ["Lobby",  "Apartment Lobby", "In-Game"]:
         bio2_buttons = rpc_lobby_buttons()
-        bio2_image, bio2_text = rpc_lobby_map()
+        bio2_image, bio2_text = rpc_game_map()
     elif bio2_details == "In-Game" and end_game():
         bio2_details, bio2_states, bio2_buttons = rpc_end_details()
         bio2_image, bio2_text = rpc_game_map()
@@ -219,7 +360,6 @@ def rpc_status():
         bio2_image, bio2_text = rpc_game_map()
         bio2_small_image, bio2_small_text = rpc_plasmid()
         
-
     return bio2_details, bio2_states, bio2_buttons, bio2_image, bio2_text, bio2_small_image, bio2_small_text
 
 def rpc_flash_details():
@@ -236,13 +376,9 @@ def rpc_flash_details():
 
 def rpc_lobby_details():
     if in_lobby():
-        return Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[lobby_game_mode()], lobby_game_map(), rpc_lobby_buttons()
+        return Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()], lobby_game_map(), rpc_lobby_buttons()
     else:
         return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
-
-def rpc_lobby_map():
-    lobby_map = lobby_game_map()
-    return MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES[lobby_map], lobby_map
 
 def rpc_lobby_buttons():
     lobby = lobby_type()
@@ -259,9 +395,12 @@ def rpc_lobby_buttons():
             }
         ]
     else:
-        return "Lobby", "Main Menu", [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
+        return [{"label": "Not Currently in a Lobby", "url": DISCORD_LINK}]
 
 def rpc_game_details():
+    if not ShockPlayerController.game_replication_info_load():
+        return "Match", "Loading Match Data", [{"label": "Waiting for Match to Load", "url": DISCORD_LINK}]
+     
     bio2_details = Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()] + " on " + game_map()
     bio2_states = player_game_status()
 
@@ -323,3 +462,13 @@ def rpc_plasmid():
         return PLASMID_IMAGE_LINK + Bioshock2MultiplayerRPC.PLASMID_IMAGES[player_plasmid()], "Using " + player_plasmid()
     
     return Bioshock2MultiplayerRPC.PLASMID_IMAGES["None"], "Using " + "No Plasmid"
+
+def rpc_test_error():
+    try:
+        division = 1 / 0
+    except ZeroDivisionError:
+        rpc_log_error(
+            "Debug Error: Division by Zero",
+            "There is a division error due to a value being divided by 0.",
+            "No additional information required as this is a debug error."
+        )
