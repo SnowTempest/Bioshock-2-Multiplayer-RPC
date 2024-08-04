@@ -24,7 +24,7 @@ A Discord Remote Procedure Call (RPC) Program for Bioshock 2 Multiplayer which d
 
 ### Features
 
-1. **Two Performance Modes**: **REALTIME** and **PERFORMANCE**. (Case-sensitive)
+1. **Two Performance Modes**: **REALTIME** and **PERFORMANCE** (Case-sensitive)
     - **REALTIME**: The RPC updates in real-time but may result in higher resource usage.
     - **PERFORMANCE**: The RPC updates less frequently, resulting in lower resource consumption.
 
