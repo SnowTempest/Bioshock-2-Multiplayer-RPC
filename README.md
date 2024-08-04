@@ -19,4 +19,4 @@ A Discord Remote Procedure Call (RPC) Program for Bioshock 2 Multiplayer which d
 7. Run the Bioshock 2 Multiplayer RPC and confirm the rpc is successfully connected.
 
 # Screenshots
-[Discord RPC](https://github.com/SnowTempest/Bioshock-2-Multiplayer-RPC/blob/main/Screenshots/In-Game.png)
+![Discord RPC](https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Screenshots/In-Game.png)
