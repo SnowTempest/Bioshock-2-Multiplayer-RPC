@@ -1,5 +1,4 @@
 from bioshock_2_multiplayer_memory import level_load, read_memory, bioshock_2_is_active, Engine_U, ShockGame_U
-import json
 
 ADAM_GRAB_MAX_PLAYERS = 6
 MAX_PLAYERS = 10

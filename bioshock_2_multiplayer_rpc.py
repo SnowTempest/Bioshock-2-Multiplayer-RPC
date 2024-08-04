@@ -1,7 +1,8 @@
 import json
 import traceback
-from time import sleep, time
 import pypresence as PyPresence
+from sys import exit
+from time import sleep, time
 from pymem.exception import ProcessNotFound
 from tkinter import Tk, messagebox
 from bioshock_2_multiplayer import *
