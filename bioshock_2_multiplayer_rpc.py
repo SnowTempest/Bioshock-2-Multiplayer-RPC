@@ -286,7 +286,7 @@ def rpc_loop():
     if rpc_data.MODE == "REALTIME":
             rpc_sleep = 0
     elif rpc_data.MODE == "PERFORMANCE":
-            rpc_sleep = RPCDATA.UPDATE_INTERVAL
+            rpc_sleep = rpc_data.UPDATE_INTERVAL
     
     bio2_start = int(time())
 
