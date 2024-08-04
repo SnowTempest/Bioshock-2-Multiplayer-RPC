@@ -15,11 +15,11 @@ A Discord Remote Procedure Call (RPC) Program for Bioshock 2 Multiplayer which d
 4. Copy the Application ID displayed on the subsequent page. Please ensure that this ID remains confidential.
 5. Insert the Application ID into the `rpc_data.json` file located in the program directory. The file should be formatted as follows:
    ```json
-  {
-      "APP_ID": 123456789012345678,
-      "MODE": "PERFORMANCE",
-      "UPDATE_INTERVAL": 5
-  }
+    {
+        "APP_ID": 123456789012345678,
+        "MODE": "PERFORMANCE",
+        "UPDATE_INTERVAL": 5
+    }
 6. Run Bioshock 2 Multiplayer with Discord opened.
 7. Run the Bioshock 2 Multiplayer RPC and confirm the RPC is successfully connected.
 
