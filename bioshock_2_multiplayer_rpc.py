@@ -418,7 +418,7 @@ def rpc_game_details():
     return bio2_details, bio2_states, bio2_buttons
 
 def rpc_game_map():
-    map = game_map()
+    map = lobby_game_map()
     return MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES[map], map
 
 def rpc_end_details():
@@ -472,3 +472,7 @@ def rpc_test_error():
             "There is a division error due to a value being divided by 0.",
             "No additional information required as this is a debug error."
         )
+
+def rpc_test_score():
+    print(player_ranking())
+    print(player_scoreboard_score())

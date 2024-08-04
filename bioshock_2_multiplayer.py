@@ -1,4 +1,5 @@
 from bioshock_2_multiplayer_memory import level_load, read_memory, bioshock_2_is_active, Engine_U, ShockGame_U
+import json
 
 ADAM_GRAB_MAX_PLAYERS = 6
 MAX_PLAYERS = 10
@@ -407,6 +408,10 @@ class GameReplicationInfo(UnrealReader):
     @staticmethod
     def pri_array_online_id(prop_id):
         return GameReplicationInfo.read("PRIArray", "Player " + str(prop_id) + " PRI", "OnlineId")
+    
+    @staticmethod
+    def pri_game_score(prop_id):
+        return GameReplicationInfo.read("PRIArray", "Player " + str(prop_id) + " PRI", "GameScore")
 
 
 class UserProfile(UnrealReader):
@@ -431,6 +436,14 @@ class UserProfile(UnrealReader):
     @staticmethod
     def player_lifetime_wins():
        return UserProfile.read("mNumWins")
+    
+    @staticmethod
+    def scoreboard_rank():
+        return UserProfile.read("mPreviousGameStats", "ScoreboardRank")
+    
+    @staticmethod
+    def scoreboard_rank_value():
+        return UserProfile.read("mPreviousGameStats", "ScoreboardRankValue")
 
 
 class ShockMPGameReplicationInfo(UnrealReader):
@@ -463,6 +476,7 @@ class ShockMPGameReplicationInfo(UnrealReader):
     @staticmethod
     def game_mode():
         return ShockMPGameReplicationInfo.read("GameMode")
+
 
 class ShockPlayerController(UnrealReader):
     u_file = ShockGame_U
@@ -578,7 +592,8 @@ class ShockPlayer(UnrealReader):
     @staticmethod
     def dual_hands_load():
         return ShockPlayer.read("DualHands") != 0
-    
+
+
 class ShockUserSettings(UnrealReader):
     u_file = ShockGame_U
 
@@ -736,11 +751,6 @@ def player_splicer():
     return Bioshock2Multiplayer.CHARACTERS[ShockUserSettings.character_id()]
 
 def player_ranking():
-    rankings = player_replication_array()
-
-    if rankings == "None":
-        return 0
-    
     if team_game():
         local_player_team = PlayerReplicationInfo.team_index()
         game_winning_team = ShockPlayerController.game_winning_team()
@@ -751,48 +761,68 @@ def player_ranking():
                 player_position = 2
         else:
             player_position = 2
-    else:
-        player_id = PlayerReplicationInfo.player_steam_id()
-        if player_id == rankings[0]:
-            player_position = 1
-        else:
-            player_position = rankings.index(player_id) + 1
 
-    return player_position
+        return player_position
+    
+    player_rank, last_rank = player_replication_array()
+
+    if player_rank == "None" or last_rank == "None":
+        return 0, 0
+    
+    return player_rank, last_rank
 
 def player_scoreboard_score():
-    player_position = player_ranking()
+    player_position, last_position = player_ranking()
 
     if player_position == 0:
         return 0
 
     if player_position == 1:
-        raw_rank_value = ShockPlayerController.game_stat_first_place_value()
+        raw_rank_value = float(ShockPlayerController.game_stat_first_place_value())
     else:
-        ranking_percent = 1.0 - (float(player_position - 2) / float(game_num_players()))
-        second_place_value = ShockPlayerController.game_stat_second_place_value()
-        last_place_value = ShockPlayerController.game_stat_last_place_value()
-        raw_rank_value = (ranking_percent * second_place_value) + ((1.0 - ranking_percent) * last_place_value)
+        ranking_percent = 1.0 - (float(player_position - 2) / float(last_position - 1))
+        raw_rank_value = (ranking_percent * float(ShockPlayerController.game_stat_second_place_value())) + ((1.0 - ranking_percent) * float(ShockPlayerController.game_stat_last_place_value()))
 
     scoreboard_rank_score = int(raw_rank_value)
-    if scoreboard_rank_score % 10 != 0:
-        scoreboard_rank_score += 10 - (scoreboard_rank_score % 10)
+    if float(scoreboard_rank_score) % float(10) != float(0):
+        scoreboard_rank_score = int(float(scoreboard_rank_score) + (float(10) - (float(scoreboard_rank_score) % float(10))))
 
     return scoreboard_rank_score
 
+
 def player_replication_array():
     if not ShockPlayerController.game_replication_info_load():
-        return "None"
+        return "None", "None"
 
     current_pri_index = 1
-    rankings = []
+    previous_id = None
+    previous_game_score = 0
+    current_rank = 1
+
+    local_id = PlayerReplicationInfo.player_steam_id()
 
     while current_pri_index <= game_num_players() and current_pri_index <= game_max_players():
-        player_id = GameReplicationInfo.pri_array_online_id(current_pri_index)
-        rankings.append(player_id)
+        current_player_id = GameReplicationInfo.pri_array_online_id(current_pri_index)
+        current_game_score = GameReplicationInfo.pri_game_score(current_pri_index)
+
+        if not is_equal_game_score(previous_id, previous_game_score, current_player_id, current_game_score):
+            current_rank = current_pri_index
+        
+        previous_game_score = current_game_score
+        previous_id = current_player_id
+
+        if local_id == current_player_id:
+            player_rank = current_rank
+
         current_pri_index += 1
 
-    return rankings
+    return player_rank, current_rank
+
+def is_equal_game_score(pri_1_id, pri_1_score, pri_2_id, pri_2_score):
+    if pri_1_id == None or pri_2_id == None:
+        return False
+    
+    return pri_1_score == pri_2_score
 
 def player_total_score():
     if not ShockPlayerController.game_replication_info_load():
@@ -823,7 +853,7 @@ def player_total_score():
     return total_score
 
 def player_weapon():
-    if not ShockPlayerController.shock_player_load() or not ShockPlayer.dual_hands_load() or DualWieldHands.current_weapon() == 0:
+    if not ShockPlayerController.shock_player_load() or player_dead() or DualWieldHands.current_weapon() == 0:
         return "None"
     
     weapon = Weapon.friendly_name()
@@ -836,7 +866,7 @@ def player_weapon():
     return weapon if weapon in Bioshock2Multiplayer.WEAPONS else "No Weapon"
 
 def player_plasmid():
-    if not ShockPlayerController.shock_player_load() or not ShockPlayer.dual_hands_load() or DualWieldHands.current_ability() == 0:
+    if not ShockPlayerController.shock_player_load() or player_dead() or DualWieldHands.current_ability() == 0:
         return "None"
 
     plasmid = Ability.friendly_name()
@@ -844,7 +874,7 @@ def player_plasmid():
     return plasmid if plasmid in Bioshock2Multiplayer.PLASMIDS else "No Plasmid"
 
 def player_upgrade():
-    if not ShockPlayerController.shock_player_load() or not ShockPlayer.dual_hands_load() or DualWieldHands.current_weapon() == 0 or Weapon.active_upgrade() == 0:
+    if not ShockPlayerController.shock_player_load() or player_dead() or DualWieldHands.current_weapon() == 0 or Weapon.active_upgrade() == 0:
         return "No Upgrade"
     
     upgrade = Upgrade.friendly_name()
@@ -970,6 +1000,9 @@ def debug():
         print("Apartment Outro", ShockPlayerController.in_apartment_outro())
     print(player_splicer())
 
+
+#Fix Tied Scores (instead of pri position check scores and determine ranks based on scoring. so same scores = same position)
+#Figure out issue with PRI crashing on match launch (maybe have a set button for pre-game)
 
 # Double check code
 # Finish any final refactorizations

@@ -3,7 +3,7 @@ __copyright__ = "Copyright (C) 2024 SnowTempest"
 __license__ = "GNU GENERAL PUBLIC LICENSE"
 __version__= "1.0"
 
-from bioshock_2_multiplayer_rpc import rpc_loop
+from bioshock_2_multiplayer_rpc import rpc_loop, rpc_test_error
 
 def main():
     print("*****************************************************************************")
