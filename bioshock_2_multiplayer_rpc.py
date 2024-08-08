@@ -8,9 +8,9 @@ from tkinter import Tk, messagebox
 from bioshock_2_multiplayer import *
 from bioshock_2_multiplayer import PlayerReplicationInfo as PRI, UserProfile as ACTIVE_PROFILE
 
-MAP_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Maps/Icons/"
-SPLICER_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Characters/"
-PLASMID_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Assets/Plasmids/"
+MAP_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Maps/Icons/"
+SPLICER_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Characters/"
+PLASMID_IMAGE_LINK = "https://raw.githubusercontent.com/SnowTempest/Bioshock-2-Multiplayer-RPC/main/Plasmids/"
 DISCORD_LINK = "https://discord.gg/4ydTGHfFPQ"
 INTERVAL_MAX = 10
 
@@ -356,6 +356,10 @@ def rpc_status():
         bio2_details, bio2_states, bio2_buttons = rpc_end_details()
         bio2_image, bio2_text = rpc_game_map()
         bio2_small_image, bio2_small_text = rpc_plasmid()
+    elif bio2_details == "In-Game" and pre_game() or not streamed_loadout():
+        bio2_details, bio2_states, bio2_buttons = rpc_pre_details()
+        bio2_image, bio2_text = rpc_game_map()
+        bio2_small_image, bio2_small_text = rpc_plasmid()
     elif bio2_details == "In-Game":
         bio2_details, bio2_states, bio2_buttons = rpc_game_details()
         bio2_image, bio2_text = rpc_game_map()
@@ -418,9 +422,22 @@ def rpc_game_details():
 
     return bio2_details, bio2_states, bio2_buttons
 
-def rpc_game_map():
-    map = lobby_game_map()
-    return MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES[map], map
+def rpc_pre_details():
+    bio2_details = Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()] + " on " + game_map()
+    bio2_states = player_game_status()
+
+    bio2_buttons = [
+        {
+            "label": "Match: " + str(game_num_players()) + "/" + str(game_max_players()) + (" Round: " + str(game_round() + 1) + (" Time: " + str(game_timer())) if game_mode() in ["GAMEMODE_HOG", "GAMEMODE_TDMHC"] else (" Time: " + str(game_timer()) if running_game() else "")),
+            "url": DISCORD_LINK
+        },
+        {
+            "label": "Score: 0 Kills: 0 Deaths: 0",
+            "url": DISCORD_LINK
+        }
+    ]
+
+    return bio2_details, bio2_states, bio2_buttons
 
 def rpc_end_details():
     bio2_details = Bioshock2MultiplayerRPC.GAME_MODES_FRIENDLY_NAMES[game_mode()] + " on " + game_map()
@@ -438,6 +455,10 @@ def rpc_end_details():
     ]
 
     return bio2_details, bio2_states, bio2_buttons
+
+def rpc_game_map():
+    map = lobby_game_map()
+    return MAP_IMAGE_LINK + Bioshock2MultiplayerRPC.MAP_IMAGES[map], map
 
 def rpc_rank_details():
     bio2_details = "Rank Up"
@@ -462,7 +483,7 @@ def rpc_plasmid():
     if not player_dead() and streamed_loadout():
         return PLASMID_IMAGE_LINK + Bioshock2MultiplayerRPC.PLASMID_IMAGES[player_plasmid()], "Using " + player_plasmid()
     
-    return Bioshock2MultiplayerRPC.PLASMID_IMAGES["None"], "Using " + "No Plasmid"
+    return PLASMID_IMAGE_LINK + Bioshock2MultiplayerRPC.PLASMID_IMAGES["None"], "Using " + "No Plasmid"
 
 def rpc_test_error():
     try:

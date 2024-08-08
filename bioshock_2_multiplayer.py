@@ -21,6 +21,19 @@ class Bioshock2Multiplayer:
         "None": "Loading..."
     }
 
+    PLASMID_IDS = {
+        0: "Electro Bolt",     
+        1: "Telekinesis",      
+        2: "Aero Dash",       
+        3: "Insect Swarm",
+        4: "Geyser Trap",      
+        5: "Houdini",          
+        6: "Poison Quills",
+        7: "Incinerate!",       
+        8: "Winter Blast",
+        9: "Sonic Boom"
+    }
+
     PLASMIDS = {
         "Electro Bolt",
         "Telekinesis",
@@ -35,6 +48,17 @@ class Bioshock2Multiplayer:
         "Stomp",
         "Sonic Boom",
         "None"
+    }
+
+    WEAPON_IDS = {
+        0: "Pistol",
+        1: "Shotgun",
+        2: "Crossbow",
+        3: "Grenade Launcher",
+        4: "Machine Gun",
+        5: "Nail Gun",
+        6: "Hunting Rifle",
+        7: "Melee Weapon"
     }
 
     WEAPONS = {
@@ -55,22 +79,27 @@ class Bioshock2Multiplayer:
     }
 
     UPGRADES = {
-        "Ammo Capacity",
-        "Automatic Firing",
-        "Damage Increase",
-        "Automatic Reload",
-        "Rate of Fire",
-        "Sawed-Off Barrel",
-        "Magazine Size",
-        "Kickback Reduction",
-        "Firing Boost",
-        "Piercing Bolt",
-        "Velocity Boost",
-        "Homing Grenades",
-        "Slug Capacity",
-        "Sniper Scope",
-        "Burst Firing",
-        "None"
+        0: "Ammo Capacity",
+        1: "Automatic Firing",
+        2: "Damage Increase",
+        4: "Automatic Reload",
+        5: "Rate of Fire",
+        6: "Sawed-Off Barrel",
+        8: "Magazine Size",
+        9: "Kickback Reduction",
+        10: "Firing Boost",
+        12: "Rate of Fire",
+        13: "Damage Increase",
+        14: "Piercing Bolt",
+        16: "Velocity Boost",
+        17: "Rate of Fire",
+        18: "Homing Grenades",
+        20: "Slug Capacity",
+        21: "Sniper Scope",
+        22: "Damage Increase",
+        24: "Damage Increase",
+        25: "Magazine Size",
+        26: "Burst Firing"
     }
 
     MELEE_WEAPONS = {
@@ -645,6 +674,10 @@ class Ability(UnrealReader):
     u_file = ShockGame_U
 
     @staticmethod
+    def unique_ability_id():
+        return Ability.read("UniqueAbilityId")
+
+    @staticmethod
     def friendly_name_size():
         return Ability.read("FriendlyNameSize")
     
@@ -655,6 +688,10 @@ class Ability(UnrealReader):
 
 class Upgrade(UnrealReader):
     u_file = ShockGame_U
+
+    @staticmethod
+    def unique_upgrade_id():
+        return Upgrade.read("UniqueUpgradeId")
 
     @staticmethod
     def friendly_name_size():
@@ -753,6 +790,7 @@ def player_ranking():
     if team_game():
         local_player_team = PlayerReplicationInfo.team_index()
         game_winning_team = ShockPlayerController.game_winning_team()
+        last_rank = 2
         if game_winning_team != 255:
             if game_winning_team == local_player_team:
                 player_position = 1
@@ -761,7 +799,7 @@ def player_ranking():
         else:
             player_position = 2
 
-        return player_position
+        return player_position, last_rank
     
     player_rank, last_rank = player_replication_array()
 
@@ -868,17 +906,21 @@ def player_plasmid():
     if not ShockPlayerController.shock_player_load() or player_dead() or DualWieldHands.current_ability() == 0:
         return "None"
 
-    plasmid = Ability.friendly_name()
+    plasmid = Ability.unique_ability_id()
 
-    return plasmid if plasmid in Bioshock2Multiplayer.PLASMIDS else "No Plasmid"
+    if plasmid == 0xFFFFFFFF:
+        plasmid_friendly_name = Ability.friendly_name()
+        return plasmid_friendly_name if plasmid_friendly_name in Bioshock2Multiplayer.PLASMIDS else "None"
+    else:
+        return Bioshock2Multiplayer.PLASMID_IDS.get(plasmid, "None")
 
 def player_upgrade():
     if not ShockPlayerController.shock_player_load() or player_dead() or DualWieldHands.current_weapon() == 0 or Weapon.active_upgrade() == 0:
-        return "No Upgrade"
+        return "None"
     
-    upgrade = Upgrade.friendly_name()
+    upgrade = Upgrade.unique_upgrade_id()
 
-    return upgrade if upgrade in Bioshock2Multiplayer.UPGRADES else "No Upgrade"
+    return Bioshock2Multiplayer.UPGRADES.get(upgrade, "None")
 
 def player_quick_melee():
     splicer = player_splicer()
@@ -921,7 +963,7 @@ def player_game_status():
         elif game_mode() == "GAMEMODE_DLC_2":
             return "Whacking other players with the " + player_weapon()
         else: 
-            return player_upgrade() + " " + player_weapon() + " with " + player_plasmid() if player_upgrade() != "No Upgrade" else player_weapon() + " with " + player_plasmid()
+            return player_upgrade() + " " + player_weapon() + " with " + player_plasmid() if player_upgrade() != "None" else player_weapon() + " with " + player_plasmid()
     elif end_game():
         return end_movie()
 
@@ -971,7 +1013,7 @@ def end_movie():
         return "Score: "  + str(PlayerReplicationInfo.player_score()) + " Kills: " + str(PlayerReplicationInfo.player_kills()) + " Streaks: " + str(PlayerReplicationInfo.player_kill_streaks())
     elif ShockPlayerController.match_results():
         total_score = player_total_score()
-        player_position = player_ranking()
+        player_position, last_position = player_ranking()
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(player_position, "th")
         return "Total Adam: " + str(total_score) + " Ranking: " + str(player_position) + suffix
     else:
@@ -1000,8 +1042,11 @@ def debug():
     print(player_splicer())
 
 
-#Fix Tied Scores (instead of pri position check scores and determine ranks based on scoring. so same scores = same position)
-#Figure out issue with PRI crashing on match launch (maybe have a set button for pre-game)
+# Fix Multi-Language Support (remove friendlynames and use Ids instead) figure out big daddy.
+# Make clearer readme
+
+
+
 
 # Double check code
 # Finish any final refactorizations
