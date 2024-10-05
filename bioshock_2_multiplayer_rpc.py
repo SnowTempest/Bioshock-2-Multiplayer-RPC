@@ -265,7 +265,7 @@ def rpc_loop():
             
             rpc.update(buttons=bio2_buttons, state=bio2_state, details=bio2_details, large_text=bio2_text, large_image=bio2_image, small_image=bio2_small_image, small_text=bio2_small_text, start=bio2_start)
             sleep(rpc_sleep)
-            
+
     except KeyboardInterrupt:
         rpc_close("\nBioshock 2 Multiplayer RPC Will Now Close.")
     except PyPresence.InvalidID:
@@ -379,7 +379,7 @@ def rpc_game_details():
 
 def rpc_game_map():
     map = lobby_game_map()
-    return f'{GITHUB_LINK}/maps/icons/{Bioshock2MultiplayerRPC.MAP_IMAGES[map]}', map
+    return f'{GITHUB_LINK}/maps/{Bioshock2MultiplayerRPC.MAP_IMAGES[map]}', map
 
 def rpc_rank_details():
     bio2_stats = player_all_time_stats()
@@ -402,7 +402,7 @@ def rpc_splicer():
     return f'{GITHUB_LINK}/splicers/{Bioshock2MultiplayerRPC.SPLICER_IMAGES[player_splicer()]}', f'Playing as {player_splicer()}'
 
 def rpc_plasmid():
-    if player_status() == "PLAYER_DEAD" and streamed_loadout():
+    if player_status() != "PLAYER_DEAD" and streamed_loadout():
         return f'{GITHUB_LINK}/plasmids/{Bioshock2MultiplayerRPC.PLASMID_IMAGES[player_plasmid()]}', f'Using {player_plasmid()}'
     
     return f'{GITHUB_LINK}/plasmids/{Bioshock2MultiplayerRPC.PLASMID_IMAGES["None"]}', f'Using No Plasmid'
