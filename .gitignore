@@ -1,0 +1,12 @@
+__pycache__
+Bioshock2MPRPC
+
+*.CT
+*.bat
+*.json
+*.spec
+
+bioshock_2_multiplayer_binaries.py
+bioshock_2_multiplayer_anticheat.py
+bioshock_2_multiplayer_unreal.py
+bioshock_2_multiplayer_rpc_gui.py
